@@ -1,0 +1,16 @@
+name = "my-api"
+main = "src/app.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+NODE_ENV = "production"
+API_VERSION = "v1"
+CORS_ORIGIN= "https://weddyskitchen.com"
+
+[triggers]
+crons = [
+  "* * * * *",        # Process outbox every minute
+  "0 */2 * * *",      # Cleanup stale orders every 2 hours
+  "0 3 * * *",        # Cleanup outbox daily at 3 AM
+  "*/10 * * * *"      # Log stats every 10 minutes
+]
