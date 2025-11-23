@@ -4,10 +4,9 @@
   "description": "Food Delivery App - Backend API",
   "type": "module",
   "scripts": {
-    "build": "tsc && tsc-alias",
-    "start": "node dist/app.js",
-    "dev": "tsx watch src/app.ts",
-    "type-check": "tsc --noEmit"
+    "dev": "wrangler dev --port 8787 --local --log-level debug",
+    "deploy": "wrangler deploy",
+    "build": "tsc"
   },
   "keywords": [
     "food-delivery",

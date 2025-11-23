@@ -6,7 +6,7 @@ import type { Env } from "../types/env";
  * Centralizes configuration for Serverless/Worker environment
  */
 export const getSupabase = (env: Env): SupabaseClient => {
-  return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+  return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE, {
     auth: {
       // Critical for Serverless: Disable browser-specific features
       // Since Workers don't have localStorage or a browser URL bar

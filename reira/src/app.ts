@@ -1,18 +1,42 @@
 import { Hono } from "hono";
-import { serve } from "@hono/node-server";
-import "dotenv/config";
+import { cors } from "hono/cors";
 import { AppContext } from "./types/hono";
 import { initServices } from "./middleware/init-services";
 import router from "./index";
 
 const app = new Hono<AppContext>();
 
+// CORS first
+app.use("*", cors());
+
+// Debug middleware
+app.use("*", async (c, next) => {
+  console.log(`📍 ${c.req.method} ${c.req.path}`);
+  await next();
+  console.log(`✅ Response: ${c.res.status}`);
+});
+
+// Services
 app.use("*", initServices);
 
-app.get("/", (c) => c.json({ message: "Hono + Supabase working!" }));
+// Root route
+app.get("/", (c) => {
+  return c.json({ message: "Hono + Cloudflare Workers working!" });
+});
+
+// API routes
 app.route("/api", router);
 
-const port = parseInt(process.env.PORT || "3000");
-console.log(`🚀 Server running on http://localhost:${port}`);
+// 404 handler
+app.notFound((c) => {
+  console.log(`❌ 404: ${c.req.path}`);
+  return c.json({ error: "Not found", path: c.req.path }, 404);
+});
 
-serve({ fetch: app.fetch, port });
+// Error handler
+app.onError((err, c) => {
+  console.error("💥 Error:", err);
+  return c.json({ error: err.message || "Internal server error" }, 500);
+});
+
+export default app;

@@ -3,9 +3,7 @@ main = "src/app.ts"
 compatibility_date = "2024-01-01"
 
 [vars]
-NODE_ENV = "production"
-API_VERSION = "v1"
-CORS_ORIGIN= "https://weddyskitchen.com"
+NODE_ENV = "development"
 
 [triggers]
 crons = [
