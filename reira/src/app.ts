@@ -7,7 +7,13 @@ import router from "./index";
 const app = new Hono<AppContext>();
 
 // CORS first
-app.use("*", cors());
+app.use(
+  "/*",
+  cors({
+    origin: "http://localhost:5173", // Must match your frontend URL exactly
+    credentials: true, // Required for cookies to work
+  })
+);
 
 // Debug middleware
 app.use("*", async (c, next) => {

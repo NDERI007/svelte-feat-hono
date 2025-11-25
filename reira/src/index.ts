@@ -3,6 +3,7 @@ import { AppContext } from "./types/hono";
 
 import authRoutes from "@routes/withAuth";
 import placeRoutes from "@routes/place";
+import menuRoutes from "@routes/menu";
 
 const router = new Hono<AppContext>();
 
@@ -10,5 +11,6 @@ const router = new Hono<AppContext>();
 
 router.route("/auth", authRoutes);
 router.route("/place", placeRoutes);
+router.route("/prod", menuRoutes);
 
 export default router;

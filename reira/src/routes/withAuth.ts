@@ -257,17 +257,28 @@ async function validateSessionToken(
   }
 
   const [sessionId, sessionSecret] = tokenParts;
-
+  console.log("3. Cache Key being looked up:", `session:${sessionId}`);
   // Get session from Redis
   const raw = await cache.get<string>(`session:${sessionId}`);
+  console.log("4. Raw Cache Result:", raw);
   if (!raw) {
     return { valid: false, reason: "Session not found" };
   }
 
   let sessionData: SessionData;
+
   try {
-    sessionData = JSON.parse(raw);
-  } catch {
+    if (typeof raw === "string") {
+      // It's a string, so we must parse it
+      sessionData = JSON.parse(raw);
+    } else if (typeof raw === "object") {
+      // It's already an object (In-memory cache or auto-parsed)
+      sessionData = raw as SessionData;
+    } else {
+      throw new Error("Unknown cache data type");
+    }
+  } catch (e) {
+    console.error("Session Parse Error:", e);
     return { valid: false, reason: "Invalid session data" };
   }
 

@@ -59,6 +59,7 @@ export const actions = {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email, code })
 			});
+			console.log('1. Hono Status:', res.status);
 
 			const data = await res.json();
 
@@ -75,12 +76,14 @@ export const actions = {
 			// We must extract the 'sessionId' and forward it to the browser.
 
 			const setCookieHeader = res.headers.get('set-cookie');
-
+			console.log('2. Hono Raw Header:', setCookieHeader);
 			if (setCookieHeader) {
 				// Parse the sessionId value using regex
 				// Looking for "sessionId=xyz..."
 				const match = setCookieHeader.match(/sessionId=([^;]+)/);
-				const token = match ? match[1] : null;
+				// Removes quotes if they exist
+				const token = match ? match[1].replace(/^"|"$/g, '') : null;
+				console.log('4. Token to Save:', token);
 
 				if (token) {
 					cookies.set('sessionId', token, {
@@ -91,6 +94,7 @@ export const actions = {
 						// Match Hono's INACTIVITY_TIMEOUT (10 days)
 						maxAge: 60 * 60 * 24 * 10
 					});
+					console.log('5. Cookie Set Command Issued');
 				}
 			}
 

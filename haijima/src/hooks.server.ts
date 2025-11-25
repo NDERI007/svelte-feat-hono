@@ -1,6 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 
-const API_URL = 'http://localhost:8787';
+const API_URL = 'http://127.0.0.1:8787';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// 1. Get the session ID from the browser's cookies
@@ -12,17 +12,21 @@ export const handle: Handle = async ({ event, resolve }) => {
 		// 2. Validate with Hono Backend
 		try {
 			// We must manually pass the cookie to Hono
-			const res = await fetch(`${API_URL}/context-verif`, {
+			const res = await fetch(`${API_URL}/api/auth/context-verif`, {
 				headers: {
 					Cookie: `sessionId=${sessionId}`
 				}
 			});
 
 			const data = await res.json();
+			console.log('Hono Status:', res.status); // Likely 200
+			console.log('Hono Payload:', JSON.stringify(data, null, 2)); // <--- THIS IS KEY
 
 			if (data.authenticated && data.user) {
+				console.log('✅ Setting locals.user');
 				event.locals.user = data.user;
 			} else {
+				console.log('❌ Auth rejected by logic');
 				// Token is invalid/expired according to Hono
 				event.locals.user = null;
 				// Optional: Cleanup invalid cookie

@@ -4,9 +4,8 @@
 	import type { LayoutData } from './$types';
 	import Feedback from './_components/feedback.svelte';
 	import Footer from './_components/footer.svelte';
-	import Navbar from './_components/navbar.svelte';
-
 	import './layout.css';
+	import { Toaster } from 'svelte-sonner';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
@@ -19,10 +18,9 @@
 	});
 </script>
 
+<Toaster richColors position="top-right" />
 <div class="app flex flex-col min-h-screen">
-	<Navbar />
-
-	<main class="flex-1 pt-14">
+	<main class="flex-1">
 		{@render children()}
 	</main>
 
