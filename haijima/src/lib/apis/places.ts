@@ -1,16 +1,6 @@
-const API_BASE = 'http://127.0.0.1:8787';
+import type { DeliveryLocation, PlaceResult } from '$lib/schemas/address';
 
-export interface PlaceResult {
-	source: 'db' | 'google';
-	id?: number;
-	place_id: string | null;
-	main_text: string;
-	secondary_text: string | null;
-	lat?: number | null;
-	lng?: number | null;
-	name?: string;
-	type?: 'place' | 'query';
-}
+const API_BASE = 'http://127.0.0.1:8787';
 
 export interface SavedAddress {
 	id: number;
@@ -47,6 +37,28 @@ export async function searchPlaces(
 	return response.json();
 }
 
+export function resolveLocationFromPrediction(prediction: PlaceResult): DeliveryLocation {
+	// A. Merge the text nicely
+	// e.g. "Silent Hostel" + "Gate C" => "Silent Hostel, Gate C"
+	let fullAddress = prediction.main_text;
+	if (prediction.secondary_text) {
+		fullAddress = `${prediction.main_text}, ${prediction.secondary_text}`;
+	}
+
+	// B. Handle Coordinates
+	// DB results usually have them. Google results usually don't (yet).
+	// If missing, we default to 0. The store knows that 0 means "Standard Fee".
+	const lat = prediction.lat ?? 0;
+	const lng = prediction.lng ?? 0;
+
+	return {
+		address: fullAddress,
+		lat: lat,
+		lng: lng,
+		place_id: prediction.place_id ?? undefined
+	};
+}
+
 /**
  * Save place details to user's addresses
  */
@@ -61,8 +73,6 @@ export async function savePlaceDetails(data: {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
-			// Add auth token if needed:
-			// 'Authorization': `Bearer ${token}`
 		},
 		body: JSON.stringify(data)
 	});
@@ -74,6 +84,3 @@ export async function savePlaceDetails(data: {
 
 	return response.json();
 }
-
-// Session token is now managed by the store
-// Import: import { sessionTokenManager } from '$lib/stores/sessionToken';

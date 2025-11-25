@@ -7,14 +7,25 @@
 		Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
 		'Open Sans', 'Helvetica Neue', sans-serif;
 	--font-mono: 'Fira Mono', monospace;
-	--color-bg-0: rgb(202, 216, 228);
-	--color-bg-1: hsl(209, 36%, 86%);
-	--color-bg-2: hsl(224, 44%, 95%);
-	--color-theme-1: #ff3e00;
-	--color-theme-2: #4075a6;
-	--color-text: rgba(0, 0, 0, 0.7);
+
+	/* Theme Colors 
+       bg-1 is your specific beige. 
+       bg-0 and bg-2 are slight variations for the gradient depth.
+    */
+	--color-bg-0: #ffffff; /* Pure white highlight */
+	--color-bg-1: #fefaef; /* Your Beige */
+	--color-bg-2: #f0eee2; /* Slightly darker beige for bottom shadow */
+
+	/* Green-900 is approx #14532d in Tailwind */
+	--color-theme-1: #14532d; /* Green-900 (Main Brand Color) */
+	--color-theme-2: #166534; /* Green-800 (Secondary/Hover) */
+
+	/* Using a very dark green/gray for text creates better harmony with beige than pure black */
+	--color-text: #052e16; /* Green-950 (High contrast text) */
+
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
+
 	font-family: var(--font-body);
 	color: var(--color-text);
 }
@@ -25,9 +36,13 @@ body {
 	background-attachment: fixed;
 	background-color: var(--color-bg-1);
 	background-size: 100vw 100vh;
+	/* Updated gradients to feel like high-quality paper.
+       The radial gradient adds a subtle white spotlight in the center.
+       The linear gradient flows from white -> beige -> darker beige.
+    */
 	background-image:
-		radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 100%),
-		linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 50%);
+		radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 100%),
+		linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 100%);
 }
 
 h1,
@@ -41,29 +56,36 @@ p {
 }
 
 a {
-	color: var(--color-theme-1);
+	color: var(--color-theme-1); /* Links now use Green-900 */
 	text-decoration: none;
+	font-weight: 500;
+	transition: color 0.2s;
 }
 
 a:hover {
+	color: var(--color-theme-2); /* Lighter green on hover */
 	text-decoration: underline;
 }
 
 h1 {
 	font-size: 2rem;
 	text-align: center;
+	color: var(--color-theme-1); /* Headings in Green-900 */
 }
 
 h2 {
 	font-size: 1rem;
+	color: var(--color-theme-1);
 }
 
 pre {
 	font-size: 16px;
 	font-family: var(--font-mono);
-	background-color: rgba(255, 255, 255, 0.45);
+	/* Changed background to be slightly translucent white to blend with beige */
+	background-color: rgba(255, 255, 255, 0.7);
+	border: 1px solid rgba(20, 83, 45, 0.1); /* Subtle green border */
 	border-radius: 3px;
-	box-shadow: 2px 2px 6px rgb(255 255 255 / 25%);
+	box-shadow: 2px 2px 6px rgba(20, 83, 45, 0.05);
 	padding: 0.5em;
 	overflow-x: auto;
 	color: var(--color-text);
@@ -86,6 +108,12 @@ button {
 
 button:focus:not(:focus-visible) {
 	outline: none;
+}
+
+/* Custom Selection Color (Highlighting text) */
+::selection {
+	background-color: var(--color-theme-1);
+	color: var(--color-bg-1);
 }
 
 @media (min-width: 720px) {

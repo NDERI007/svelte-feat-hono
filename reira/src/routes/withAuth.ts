@@ -1,17 +1,26 @@
 import { Hono } from "hono";
 import { setCookie, deleteCookie, getCookie } from "hono/cookie";
 import { z } from "zod";
-import { signSessionId } from "@utils/hmac";
-import { generateOTP, timingSafeEqual } from "@utils/cryptoUtil";
+
 import type { AppContext } from "@/types/hono";
 import { CacheService } from "@/config/cache";
+import {
+  base64ToUint8Array,
+  constantTimeEqual,
+  generateOTP,
+  generateSecureRandomString,
+  hashSecret,
+  timingSafeEqual,
+  uint8ArrayToBase64,
+} from "@/utils/session";
 
 const app = new Hono<AppContext>();
 
 // Constants
 const OTP_TTL = 600; // 10 minutes
-const RESEND_COOLDOWN = 30;
-const SESSION_TTL = 60 * 60 * 2; // 2 hrs
+const RESEND_COOLDOWN = 30; // 30 seconds
+const INACTIVITY_TIMEOUT = 60 * 60 * 24 * 10; // 10 days
+const ACTIVITY_CHECK_INTERVAL = 60 * 60; // 1 hour
 const MAX_OTP_ATTEMPTS = 5;
 const MAX_SEND_ATTEMPTS = 10;
 const ATTEMPT_WINDOW = 60 * 60; // 1 hour
@@ -22,247 +31,351 @@ async function checkRateLimit(
   key: string,
   limit: number,
   windowSeconds: number
-): Promise<{ allowed: boolean; ttl: number }> {
+): Promise<{ allowed: boolean; ttl: number; current: number }> {
   const current = await cache.incr(key);
   if (current === 1) {
     await cache.expire(key, windowSeconds);
   }
   const ttl = await cache.ttl(key);
-  return { allowed: current <= limit, ttl };
+  return { allowed: current <= limit, ttl, current };
+}
+
+// --- SESSION TYPES ---
+interface SessionData {
+  userID: string;
+  email: string;
+  role: string;
+  two_factor_enabled: boolean;
+  secretHash: string;
+  lastVerifiedAt: number;
+  createdAt: number;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+interface ValidationResult {
+  valid: boolean;
+  session?: SessionData;
+  shouldRefresh?: boolean;
+  reason?: string;
 }
 
 // --- 1. SEND OTP ---
+const emailSchema = z.email().toLowerCase().trim();
+// Accepts number or string, converts to string, cleans whitespace
+const otpSchema = z
+  .union([z.string(), z.number()])
+  .transform((val) => String(val).replace(/\s+/g, "").trim())
+  .refine((val) => /^\d{6}$/.test(val), { message: "OTP must be 6 digits" });
+
+// SEND OTP
+
 app.post("/send-otp", async (c) => {
-  const body = await c.req.json();
-  const email = body.email?.toLowerCase().trim();
-
-  if (!email) return c.json({ error: "Email required" }, 400);
-
-  // Use cache from context
-  const cache = c.var.cache;
-
-  // 1. Rate Limit: Send Attempts (Global Limit)
-  const sendLimit = await checkRateLimit(
-    cache,
-    `otp_send_attempts:${email}`,
-    MAX_SEND_ATTEMPTS,
-    ATTEMPT_WINDOW
-  );
-
-  if (!sendLimit.allowed) {
-    return c.json({ error: "Too many OTP requests. Try again later." }, 429);
-  }
-
-  // 2. Cooldown Check
-  const cooldownTTL = await cache.ttl(`otp_cooldown:${email}`);
-  if (cooldownTTL > 0) {
-    return c.json(
-      {
-        error: `Please wait ${cooldownTTL}s before resending.`,
-        retryAfter: cooldownTTL,
-      },
-      429
-    );
-  }
-
-  // 3. Generate & Store
-  const code = await generateOTP();
-
-  // Store OTP
-  await cache.set(`otp:${email}`, code, OTP_TTL);
-  // Set Cooldown
-  await cache.set(`otp_cooldown:${email}`, "1", RESEND_COOLDOWN);
-  // Reset Verify Attempts on fresh send
-  await cache.del(`otp_verify_attempts:${email}`);
-
-  // 4. Send Email using resend service from context
   try {
+    const body = await c.req.json();
+    const parse = emailSchema.safeParse(body.email);
+
+    if (!parse.success) return c.json({ error: "Valid email required" }, 400);
+    const email = parse.data;
+
+    const cache = c.var.cache;
+
+    // 1. Check Rate Limits
+    const limit = await checkRateLimit(
+      cache,
+      `otp_send_attempts:${email}`,
+      MAX_SEND_ATTEMPTS,
+      ATTEMPT_WINDOW
+    );
+    if (!limit.allowed) {
+      return c.json({ error: "Too many requests", retryAfter: limit.ttl }, 429);
+    }
+
+    // 2. Check Cooldown
+    const cooldown = await cache.ttl(`otp_cooldown:${email}`);
+    if (cooldown > 0) {
+      return c.json({ error: `Wait ${cooldown}s`, retryAfter: cooldown }, 429);
+    }
+
+    // 3. Generate & Save
+    const code = await generateOTP();
+
+    // Reset verify attempts on new send
+    await Promise.all([
+      cache.set(`otp:${email}`, code, OTP_TTL),
+      cache.set(`otp_cooldown:${email}`, "1", RESEND_COOLDOWN),
+      cache.del(`otp_verify_attempts:${email}`),
+    ]);
+
+    // 4. Send Email
     await c.var.resend.sendOtpEmail(email, code);
-    return c.json({ message: "OTP sent!" });
+
+    return c.json({ message: "OTP sent", expiresIn: OTP_TTL });
   } catch (err) {
-    console.error("Failed to send OTP:", err);
-    return c.json({ error: "Failed to send OTP" }, 500);
+    console.error("Send OTP Error:", err);
+    return c.json({ error: "Internal Error" }, 500);
   }
 });
 
-// --- 2. VERIFY OTP ---
+// VERIFY OTP
+
 app.post("/verify-otp", async (c) => {
   const cache = c.var.cache;
   const supabase = c.var.supabase;
-  const body = await c.req.json();
 
-  let { email, code } = body;
+  try {
+    const body = await c.req.json();
 
-  // Sanitization
-  email = email?.toLowerCase().trim().replace(/\s+/g, "");
-  code = code?.replace(/[\s\u200B-\u200D\uFEFF]/g, "").trim();
+    // 1. Validate Inputs
+    const emailParse = emailSchema.safeParse(body.email);
+    const otpParse = otpSchema.safeParse(body.code);
 
-  if (!email || !code) return c.json({ error: "Email and OTP required" }, 400);
-  if (!/^\d{6}$/.test(code))
-    return c.json({ error: "Invalid OTP format" }, 400);
+    if (!emailParse.success) return c.json({ error: "Invalid email" }, 400);
+    if (!otpParse.success) return c.json({ error: "Invalid OTP format" }, 400);
 
-  // 1. Rate Limit: Verify Attempts
-  const verifyLimit = await checkRateLimit(
-    cache,
-    `otp_verify_attempts:${email}`,
-    MAX_OTP_ATTEMPTS,
-    OTP_TTL
-  );
+    const email = emailParse.data;
+    const inputCode = otpParse.data; // This is guaranteed to be a string now
 
-  if (!verifyLimit.allowed) {
-    // Security: Kill the OTP if they brute force it
-    await cache.del(`otp:${email}`);
-    return c.json(
-      {
-        error: "Too many failed attempts. Request a new OTP.",
-        retryAfter: verifyLimit.ttl,
-      },
-      429
+    // 2. Check Rate Limits
+    const limit = await checkRateLimit(
+      cache,
+      `otp_verify_attempts:${email}`,
+      MAX_OTP_ATTEMPTS,
+      OTP_TTL
     );
-  }
 
-  // 2. Fetch Stored OTP
-  const storedCode = await cache.get<string>(`otp:${email}`);
-  if (!storedCode) {
-    return c.json({ error: "OTP expired or not found" }, 400);
-  }
-
-  // 3. Timing Safe Compare
-  const isValid = timingSafeEqual(storedCode, code);
-
-  if (!isValid) {
-    return c.json(
-      {
-        error: "Invalid OTP",
-        attemptsRemaining: Math.max(
-          0,
-          MAX_OTP_ATTEMPTS -
-            ((await cache.get<number>(`otp_verify_attempts:${email}`)) || 0)
-        ),
-      },
-      400
-    );
-  }
-
-  // 4. Cleanup OTP
-  await cache.del(`otp:${email}`);
-  await cache.del(`otp_verify_attempts:${email}`);
-
-  // 5. Create/Get User Profile
-  const { data, error: rpcError } = await supabase.rpc(
-    "ensure_profile_exists",
-    {
-      p_email: email,
+    if (!limit.allowed) {
+      // Security: Burn the OTP if they spam verify
+      await cache.del(`otp:${email}`);
+      return c.json(
+        { error: "Too many failed attempts", retryAfter: limit.ttl },
+        429
+      );
     }
-  );
 
-  if (rpcError) {
-    console.error("RPC Error:", rpcError);
-    return c.json({ error: "Profile creation failed" }, 500);
+    const rawStoredCode = await cache.get<string | number>(`otp:${email}`);
+
+    if (!rawStoredCode) {
+      return c.json({ error: "OTP expired or not found" }, 400);
+    }
+
+    // Force conversion to string to prevent Type Mismatch
+    const storedCode = String(rawStoredCode);
+
+    // 4. Compare
+    const isValid = timingSafeEqual(storedCode, inputCode);
+
+    if (!isValid) {
+      return c.json(
+        {
+          error: "Invalid OTP",
+          attemptsRemaining: Math.max(0, MAX_OTP_ATTEMPTS - limit.current),
+        },
+        400
+      );
+    }
+
+    // 5. Cleanup (Success)
+    await Promise.all([
+      cache.del(`otp:${email}`),
+      cache.del(`otp_verify_attempts:${email}`),
+      cache.del(`otp_cooldown:${email}`),
+    ]);
+
+    // Ensure Profile
+    const { data, error: rpcError } = await supabase.rpc(
+      "ensure_profile_exists",
+      { p_email: email }
+    );
+
+    if (rpcError || !data?.[0]) {
+      console.error("RPC Error:", rpcError);
+      return c.json({ error: "Login failed (Profile Error)" }, 500);
+    }
+
+    const user = data[0]; // { id, role, two_factor_enabled }
+
+    // Generate Session
+    const sessionId = generateSecureRandomString();
+    const sessionSecret = generateSecureRandomString();
+    const sessionToken = `${sessionId}.${sessionSecret}`;
+
+    const sessionData = {
+      userID: user.id,
+      email,
+      role: user.role,
+      two_factor_enabled: user.two_factor_enabled,
+      secretHash: uint8ArrayToBase64(await hashSecret(sessionSecret)),
+      lastVerifiedAt: Date.now(),
+      createdAt: Date.now(),
+      ipAddress: c.req.header("cf-connecting-ip"),
+      userAgent: c.req.header("user-agent"),
+    };
+
+    // Save Session
+    await cache.set(
+      `session:${sessionId}`,
+      JSON.stringify(sessionData),
+      INACTIVITY_TIMEOUT
+    );
+
+    // Set Cookie
+    const isProduction = c.env?.NODE_ENV === "production";
+    setCookie(c, "sessionId", sessionToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "Lax",
+      path: "/",
+      maxAge: INACTIVITY_TIMEOUT,
+    });
+
+    return c.json({
+      message: "Authenticated",
+      user: {
+        email,
+        role: user.role,
+        two_factor_enabled: user.two_factor_enabled,
+      },
+    });
+  } catch (err) {
+    console.error("Verify Logic Error:", err);
+    return c.json({ error: "Internal Server Error" }, 500);
   }
-
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    return c.json({ error: "No profile data returned" }, 500);
-  }
-
-  const { id: user_id, role, two_factor_enabled } = data[0];
-
-  // 6. Create Session
-  const userIdSchema = z.uuid();
-  const userID = userIdSchema.parse(user_id);
-  const sessionId = crypto.randomUUID();
-
-  // Sign ID for Redis Key
-  const signedId = await signSessionId(sessionId, c.env.SESSION_SECRET);
-
-  const sessionData = {
-    userID,
-    email,
-    role,
-    two_factor_enabled,
-    createdAt: Date.now(),
-  };
-
-  await cache.set(
-    `session:${signedId}`,
-    JSON.stringify(sessionData),
-    SESSION_TTL
-  );
-
-  // 7. Set Cookie
-  setCookie(c, "sessionId", sessionId, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    path: "/",
-    maxAge: SESSION_TTL,
-  });
-
-  return c.json({
-    message: "Authenticated!",
-    user: { email, role, two_factor_enabled },
-  });
 });
 
-// --- 3. CONTEXT VERIFICATION (Me) ---
-app.get("/context-verif", async (c) => {
-  const sessionId = getCookie(c, "sessionId");
+// --- 3. VALIDATE SESSION TOKEN ---
+async function validateSessionToken(
+  cache: CacheService,
+  token: string
+): Promise<ValidationResult> {
+  const now = Date.now();
 
-  if (!sessionId) {
+  // Parse token: ID.SECRET
+  const tokenParts = token.split(".");
+  if (tokenParts.length !== 2) {
+    return { valid: false, reason: "Invalid token format" };
+  }
+
+  const [sessionId, sessionSecret] = tokenParts;
+
+  // Get session from Redis
+  const raw = await cache.get<string>(`session:${sessionId}`);
+  if (!raw) {
+    return { valid: false, reason: "Session not found" };
+  }
+
+  let sessionData: SessionData;
+  try {
+    sessionData = JSON.parse(raw);
+  } catch {
+    return { valid: false, reason: "Invalid session data" };
+  }
+
+  // Verify secret hash (constant-time comparison)
+  const providedSecretHash = await hashSecret(sessionSecret);
+  const storedSecretHash = base64ToUint8Array(sessionData.secretHash);
+
+  if (!constantTimeEqual(providedSecretHash, storedSecretHash)) {
+    return { valid: false, reason: "Invalid session secret" };
+  }
+
+  // Check inactivity timeout
+  const timeSinceLastVerified = now - sessionData.lastVerifiedAt;
+  if (timeSinceLastVerified >= INACTIVITY_TIMEOUT * 1000) {
+    await cache.del(`session:${sessionId}`);
+    return { valid: false, reason: "Session expired" };
+  }
+
+  // Determine if we should refresh lastVerifiedAt
+  const shouldRefresh = timeSinceLastVerified >= ACTIVITY_CHECK_INTERVAL * 1000;
+
+  return {
+    valid: true,
+    session: sessionData,
+    shouldRefresh,
+  };
+}
+
+// --- 4. CONTEXT VERIFICATION (Me) ---
+app.get("/context-verif", async (c) => {
+  const sessionToken = getCookie(c, "sessionId");
+
+  if (!sessionToken) {
     return c.json({ authenticated: false, user: null });
   }
 
   const cache = c.var.cache;
 
   try {
-    const signedId = await signSessionId(sessionId, c.env.SESSION_SECRET);
-    const key = `session:${signedId}`;
+    const result = await validateSessionToken(cache, sessionToken);
 
-    const raw = await cache.get<string>(key);
-
-    if (!raw) {
-      deleteCookie(c, "sessionId");
-      return c.json({ authenticated: false, user: null });
+    if (!result.valid) {
+      deleteCookie(c, "sessionId", { path: "/" });
+      return c.json({
+        authenticated: false,
+        user: null,
+        reason: result.reason,
+      });
     }
 
-    const sessionData = JSON.parse(raw);
+    const sessionData = result.session!;
 
-    // Max Age Check
-    if (Date.now() - sessionData.createdAt > SESSION_TTL * 1000) {
-      await cache.del(key);
-      deleteCookie(c, "sessionId");
-      return c.json({ authenticated: false, user: null });
+    // Sliding window refresh (non-blocking)
+    if (result.shouldRefresh) {
+      const sessionId = sessionToken.split(".")[0];
+      sessionData.lastVerifiedAt = Date.now();
+
+      // Use waitUntil if available (Cloudflare Workers)
+      const updatePromise = cache.set(
+        `session:${sessionId}`,
+        JSON.stringify(sessionData),
+        INACTIVITY_TIMEOUT
+      );
+
+      if (c.executionCtx?.waitUntil) {
+        c.executionCtx.waitUntil(updatePromise);
+      } else {
+        // Fallback for non-Cloudflare environments
+        updatePromise.catch((err) =>
+          console.error("Session refresh failed:", err)
+        );
+      }
     }
-
-    // Sliding Window Refresh (Non-blocking)
-    c.executionCtx.waitUntil(cache.expire(key, SESSION_TTL));
 
     return c.json({
       authenticated: true,
-      user: { email: sessionData.email, role: sessionData.role },
+      user: {
+        email: sessionData.email,
+        role: sessionData.role,
+        two_factor_enabled: sessionData.two_factor_enabled,
+      },
     });
   } catch (err) {
     console.error("Context verification failed:", err);
-    return c.json({ authenticated: false, user: null });
+    return c.json({
+      authenticated: false,
+      user: null,
+      error: "Verification failed",
+    });
   }
 });
 
-// --- 4. LOGOUT ---
+// --- 5. LOGOUT ---
 app.get("/logout", async (c) => {
-  const sessionId = getCookie(c, "sessionId");
+  const sessionToken = getCookie(c, "sessionId");
 
-  if (sessionId) {
+  if (sessionToken) {
     const cache = c.var.cache;
     try {
-      const signedId = await signSessionId(sessionId, c.env.SESSION_SECRET);
-      await cache.del(`session:${signedId}`);
+      const sessionId = sessionToken.split(".")[0];
+      await cache.del(`session:${sessionId}`);
     } catch (e) {
-      console.error("Logout cleanup error", e);
+      console.error("Logout cleanup error:", e);
     }
-    deleteCookie(c, "sessionId");
   }
 
-  return c.json({ message: "Logged out!" });
+  deleteCookie(c, "sessionId", { path: "/" });
+  return c.json({ message: "Logged out successfully" });
 });
 
 export default app;

@@ -1,4 +1,3 @@
-<!-- src/routes/+page.svelte -->
 <script lang="ts">
 	import Feature from './_components/feature.svelte';
 	import Hero from './_components/hero.svelte';

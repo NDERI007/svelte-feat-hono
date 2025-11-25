@@ -14,7 +14,7 @@
 		terms: {
 			title: 'Terms of Service',
 			content: `
-Last Updated: [DATE]
+Last Updated: 24-Nov-25
 
 Welcome to Weddy's Kitchen. By using our food ordering service, you agree to these Terms of Service.
 
@@ -397,7 +397,7 @@ Still have questions? Contact us at 0745340424 or 0727942764
 			<!-- Company Info -->
 			<div>
 				<h3 class="mb-4 text-lg font-semibold text-white">Weddy's Kitchen</h3>
-				<p class="mb-4 text-sm">Fresh meals delivered within a 5km radius from School Campus.</p>
+
 				<div class="text-sm">
 					<p class="mb-2">
 						<span class="font-medium text-white">Delivery Area:</span>

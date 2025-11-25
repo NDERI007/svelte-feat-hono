@@ -1,92 +1,302 @@
 import { createMiddleware } from "hono/factory";
-import { getCookie, deleteCookie } from "hono/cookie";
+import { getCookie, deleteCookie, setCookie } from "hono/cookie";
 import { CacheService } from "@config/cache";
-import { signSessionId } from "../utils/hmac";
+import {
+  base64ToUint8Array,
+  constantTimeEqual,
+  hashSecret,
+} from "@/utils/session";
 import type { AuthUser } from "../types/authUser";
 import { AppContext } from "@/types/hono";
 
-const MAX_SESSION_AGE = 60 * 60 * 24 * 7; // 7 DAYS
-const SESSION_TTL = 60 * 60 * 24 * 7;
+// Session Configuration
+const INACTIVITY_TIMEOUT = 60 * 60 * 24 * 10; // 10 days (max session age)
+const ACTIVITY_CHECK_INTERVAL = 60 * 60; // 1 hour (refresh threshold)
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 10; // 10 days
 
-export function withAuth(requiredRoles?: string[]) {
-  // We pass 'AppContext' generic so TS knows about c.env and c.set
+interface SessionData {
+  userID: string;
+  email: string;
+  role: string;
+  two_factor_enabled: boolean;
+  secretHash: string;
+  lastVerifiedAt: number;
+  createdAt: number;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+/**
+ * Validates session token and returns session data
+ */
+async function validateSessionToken(
+  cache: CacheService,
+  token: string
+): Promise<{
+  valid: boolean;
+  session?: SessionData;
+  shouldRefresh?: boolean;
+  reason?: string;
+}> {
+  const now = Date.now();
+
+  // Parse token: ID.SECRET
+  const tokenParts = token.split(".");
+  if (tokenParts.length !== 2) {
+    return { valid: false, reason: "Invalid token format" };
+  }
+
+  const [sessionId, sessionSecret] = tokenParts;
+
+  // Get session from Redis
+  const raw = await cache.get<string>(`session:${sessionId}`);
+  if (!raw) {
+    return { valid: false, reason: "Session not found" };
+  }
+
+  let sessionData: SessionData;
+  try {
+    sessionData = typeof raw === "string" ? JSON.parse(raw) : raw;
+  } catch {
+    return { valid: false, reason: "Invalid session data" };
+  }
+
+  // Verify secret hash (constant-time comparison)
+  const providedSecretHash = await hashSecret(sessionSecret);
+  const storedSecretHash = base64ToUint8Array(sessionData.secretHash);
+
+  if (!constantTimeEqual(providedSecretHash, storedSecretHash)) {
+    return { valid: false, reason: "Invalid session secret" };
+  }
+
+  // Check inactivity timeout (absolute expiration)
+  const timeSinceLastVerified = now - sessionData.lastVerifiedAt;
+  if (timeSinceLastVerified >= INACTIVITY_TIMEOUT * 1000) {
+    await cache.del(`session:${sessionId}`);
+    return { valid: false, reason: "Session expired due to inactivity" };
+  }
+
+  // Check if session is too old (created too long ago)
+  const sessionAge = now - sessionData.createdAt;
+  if (sessionAge >= INACTIVITY_TIMEOUT * 1000) {
+    await cache.del(`session:${sessionId}`);
+    return { valid: false, reason: "Session expired (max age reached)" };
+  }
+
+  // Determine if we should refresh (sliding window)
+  const shouldRefresh = timeSinceLastVerified >= ACTIVITY_CHECK_INTERVAL * 1000;
+
+  return {
+    valid: true,
+    session: sessionData,
+    shouldRefresh,
+  };
+}
+
+/**
+ * Refreshes session timestamp in Redis
+ */
+async function refreshSession(
+  cache: CacheService,
+  sessionId: string,
+  sessionData: SessionData
+): Promise<void> {
+  const now = Date.now();
+  const updatedSession = {
+    ...sessionData,
+    lastVerifiedAt: now,
+  };
+
+  await cache.set(
+    `session:${sessionId}`,
+    JSON.stringify(updatedSession),
+    INACTIVITY_TIMEOUT
+  );
+}
+
+/**
+ * Auth Middleware with automatic session refresh
+ *
+ * @param requiredRoles - Optional array of roles that are allowed to access the route
+ * @param options - Configuration options
+ */
+export function withAuth(
+  requiredRoles?: string[],
+  options: {
+    skipRefresh?: boolean; // Skip automatic refresh for specific routes
+    strictRoleCheck?: boolean; // Return 403 instead of 401 for role failures
+  } = {}
+) {
   return createMiddleware<AppContext>(async (c, next) => {
-    // 1. Initialize Services (Must happen inside request)
+    const isProduction = c.env?.NODE_ENV === "production";
+
+    // 1. Initialize Cache Service
     const cache = new CacheService(c.env);
 
-    // 2. Get Session Cookie
-    const sessionId = getCookie(c, "sessionId");
+    // 2. Get Session Token from Cookie
+    const sessionToken = getCookie(c, "sessionId");
 
-    if (!sessionId) {
+    if (!sessionToken) {
       return c.json(
-        { error: "Authentication required", authenticated: false },
+        {
+          error: "Authentication required",
+          authenticated: false,
+        },
         401
       );
     }
 
-    // 3. Sign Session ID (Requires secret from c.env)
-    if (!c.env.SESSION_SECRET) {
-      console.error("SESSION_SECRET is missing in env variables");
-      return c.json({ error: "Server configuration error" }, 500);
-    }
-
-    // We sign it because Redis keys are likely stored as "session:signed_id"
-    const signedId = await signSessionId(sessionId, c.env.SESSION_SECRET);
-    const key = `session:${signedId}`;
-
-    // 4. Lookup in Redis
-    const raw = await cache.get<string>(key);
-
-    if (!raw) {
-      deleteCookie(c, "sessionId");
-      return c.json({ error: "Session expired", authenticated: false }, 401);
-    }
-
-    // 5. Parse Data
-    let sessionData: AuthUser & { createdAt: number };
-
+    // 3. Validate Session Token
+    let validationResult;
     try {
-      // Handle case where Redis might return object or string depending on how it was set
-      sessionData = typeof raw === "string" ? JSON.parse(raw) : raw;
-    } catch {
-      await cache.del(key);
-      deleteCookie(c, "sessionId");
+      validationResult = await validateSessionToken(cache, sessionToken);
+    } catch (err) {
+      console.error("Session validation error:", err);
+      deleteCookie(c, "sessionId", { path: "/" });
       return c.json(
-        { error: "Invalid session data", authenticated: false },
+        {
+          error: "Session validation failed",
+          authenticated: false,
+        },
         401
       );
     }
 
-    // 6. Enforce Lifetime
-    const sessionAge = Date.now() - sessionData.createdAt;
-    if (sessionAge > MAX_SESSION_AGE * 1000) {
-      await cache.del(key);
-      deleteCookie(c, "sessionId");
-      return c.json({ error: "Session too old", authenticated: false }, 401);
+    // 4. Handle Invalid Sessions
+    if (!validationResult.valid) {
+      deleteCookie(c, "sessionId", { path: "/" });
+      return c.json(
+        {
+          error: validationResult.reason || "Invalid session",
+          authenticated: false,
+        },
+        401
+      );
     }
 
-    // 7. Sliding Window: Refresh TTL
-    // We use c.executionCtx.waitUntil to not block the response
-    c.executionCtx.waitUntil(
-      cache
-        .expire(key, SESSION_TTL)
-        .catch((err) => console.error("TTL refresh failed", err))
-    );
+    const sessionData = validationResult.session!;
+    const sessionId = sessionToken.split(".")[0];
 
-    // 8. Attach User to Context
+    // 5. Sliding Window Session Refresh (Like Supabase)
+    if (validationResult.shouldRefresh && !options.skipRefresh) {
+      // Non-blocking refresh using waitUntil (Cloudflare Workers)
+      const refreshPromise = refreshSession(cache, sessionId, sessionData);
+
+      if (c.executionCtx?.waitUntil) {
+        c.executionCtx.waitUntil(refreshPromise);
+      } else {
+        // Fallback for non-Cloudflare environments
+        refreshPromise.catch((err) =>
+          console.error("Session refresh failed:", err)
+        );
+      }
+
+      // Also refresh the cookie to extend its lifetime
+      setCookie(c, "sessionId", sessionToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "None" : "Lax",
+        path: "/",
+        maxAge: COOKIE_MAX_AGE,
+      });
+    }
+
+    // 6. Attach User to Context
     const user: AuthUser = {
       userID: sessionData.userID,
       email: sessionData.email,
-      sessionId,
+      sessionId: sessionId,
       role: sessionData.role,
       two_factor_enabled: sessionData.two_factor_enabled,
     };
 
     c.set("user", user);
 
-    // 9. Role Check
-    if (requiredRoles && !requiredRoles.includes(user.role)) {
-      return c.json({ error: "Forbidden: insufficient permissions" }, 403);
+    // 7. Role-Based Access Control
+    if (requiredRoles && requiredRoles.length > 0) {
+      if (!requiredRoles.includes(user.role)) {
+        const statusCode = options.strictRoleCheck ? 403 : 401;
+        return c.json(
+          {
+            error: "Forbidden: insufficient permissions",
+            required: requiredRoles,
+            current: user.role,
+          },
+          statusCode
+        );
+      }
+    }
+
+    // 8. Continue to Route Handler
+    await next();
+  });
+}
+
+/**
+ * Optional middleware for routes that need user data but don't require authentication
+ * Attaches user to context if session exists, but doesn't block the request
+ */
+export function withOptionalAuth() {
+  return createMiddleware<AppContext>(async (c, next) => {
+    const cache = new CacheService(c.env);
+    const sessionToken = getCookie(c, "sessionId");
+    const isProduction = c.env?.NODE_ENV === "production";
+
+    if (sessionToken) {
+      try {
+        const validationResult = await validateSessionToken(
+          cache,
+          sessionToken
+        );
+
+        if (validationResult.valid) {
+          const sessionData = validationResult.session!;
+          const sessionId = sessionToken.split(".")[0];
+
+          // Attach user to context
+          const user: AuthUser = {
+            userID: sessionData.userID,
+            email: sessionData.email,
+            sessionId: sessionId,
+            role: sessionData.role,
+            two_factor_enabled: sessionData.two_factor_enabled,
+          };
+
+          c.set("user", user);
+
+          // Refresh session if needed
+          if (validationResult.shouldRefresh) {
+            const refreshPromise = refreshSession(
+              cache,
+              sessionId,
+              sessionData
+            );
+
+            if (c.executionCtx?.waitUntil) {
+              c.executionCtx.waitUntil(refreshPromise);
+            } else {
+              refreshPromise.catch((err) =>
+                console.error("Optional auth refresh failed:", err)
+              );
+            }
+
+            // Refresh cookie
+            setCookie(c, "sessionId", sessionToken, {
+              httpOnly: true,
+              secure: isProduction,
+              sameSite: isProduction ? "None" : "Lax",
+              path: "/",
+              maxAge: COOKIE_MAX_AGE,
+            });
+          }
+        } else {
+          // Invalid session - clean it up
+          deleteCookie(c, "sessionId", { path: "/" });
+        }
+      } catch (err) {
+        console.error("Optional auth error:", err);
+        // Don't block the request, just log the error
+      }
     }
 
     await next();
