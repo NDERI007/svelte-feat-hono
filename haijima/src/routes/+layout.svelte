@@ -2,7 +2,6 @@
 	import { setAuthState } from '$lib/stores/auth.svelte';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
-	import Feedback from './_components/feedback.svelte';
 	import Footer from './_components/footer.svelte';
 	import './layout.css';
 	import { Toaster } from 'svelte-sonner';
@@ -25,5 +24,4 @@
 	</main>
 
 	<Footer />
-	<Feedback />
 </div>

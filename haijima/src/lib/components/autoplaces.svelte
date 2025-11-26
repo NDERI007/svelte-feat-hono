@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onDestroy, tick } from 'svelte';
 	import { fade, slide } from 'svelte/transition';
-	import { searchPlaces } from '$lib/apis/places';
-	import { sessionTokenManager } from '$lib/stores/sessionToken';
+	import { searchPlaces } from '$lib/apis/places'; // Ensure this path exists
+	import { sessionTokenManager } from '$lib/stores/sessionToken'; // Ensure this path exists
 	import Icon from '@iconify/svelte';
-	import type { PlaceResult } from '$lib/schemas/address';
+	import type { PlaceResult } from '$lib/schemas/address'; // Ensure types exist
 
 	interface Props {
 		onPlaceSelected?: (place: PlaceResult) => void;
@@ -26,17 +26,15 @@
 	let inputElement: HTMLInputElement;
 	let debounceTimer: ReturnType<typeof setTimeout>;
 
-	// Fallback modal state
+	// Fallback modal state (Internal to this component)
 	let fallbackOpen = $state(false);
 	let fallbackData = $state({
 		name: '',
 		landmark: ''
 	});
 
-	// Derived state for validation
 	let canSubmitFallback = $derived(fallbackData.name.trim().length > 0);
 
-	// Cleanup on component destroy
 	onDestroy(() => {
 		if (debounceTimer) clearTimeout(debounceTimer);
 	});
@@ -51,7 +49,6 @@
 		}
 
 		debounceTimer = setTimeout(async () => {
-			// Check again if query is still valid when timer fires
 			const currentQuery = query.trim();
 			if (!currentQuery) {
 				results = [];
@@ -62,10 +59,8 @@
 			isLoading = true;
 			try {
 				const sessionToken = sessionTokenManager.getGlobalToken();
-				// Use currentQuery instead of query to avoid race conditions
 				results = await searchPlaces(currentQuery, sessionToken, 10);
 
-				// Final check: only show results if query hasn't changed
 				if (query.trim() === currentQuery) {
 					isOpen = true;
 					selectedIndex = -1;
@@ -81,14 +76,20 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (!isOpen) return;
+		// Allow closing with escape even if not open (to blur)
+		if (event.key === 'Escape') {
+			isOpen = false;
+			selectedIndex = -1;
+			inputElement?.blur();
+			return;
+		}
 
-		const itemCount = results.length > 0 ? results.length : 1;
+		if (!isOpen) return;
 
 		switch (event.key) {
 			case 'ArrowDown':
 				event.preventDefault();
-				selectedIndex = Math.min(selectedIndex + 1, itemCount - 1);
+				selectedIndex = Math.min(selectedIndex + 1, results.length - 1);
 				break;
 			case 'ArrowUp':
 				event.preventDefault();
@@ -102,10 +103,6 @@
 					selectPlace(results[selectedIndex]);
 				}
 				break;
-			case 'Escape':
-				isOpen = false;
-				selectedIndex = -1;
-				break;
 		}
 	}
 
@@ -115,12 +112,13 @@
 		selectedIndex = -1;
 
 		if (onPlaceSelected) {
-			await tick(); // Wait for DOM updates
+			await tick();
 			onPlaceSelected(place);
 		}
 	}
 
 	function handleBlur() {
+		// Delay closing to allow click events on dropdown items to fire
 		setTimeout(() => {
 			isOpen = false;
 			selectedIndex = -1;
@@ -137,7 +135,6 @@
 		fallbackOpen = true;
 		isOpen = false;
 		await tick();
-		// Focus first input after modal opens
 		document.getElementById('place-name')?.focus();
 	}
 
@@ -152,7 +149,7 @@
 
 		const customPlace: PlaceResult = {
 			source: 'db',
-			id: Date.now(),
+			id: Date.now(), // Temp ID
 			place_id: null,
 			main_text: fallbackData.name,
 			secondary_text: fallbackData.landmark || null,
@@ -169,7 +166,6 @@
 		closeFallbackModal();
 	}
 
-	// Handle Enter key in modal
 	function handleModalKeydown(event: KeyboardEvent) {
 		if (event.key === 'Enter' && canSubmitFallback) {
 			submitFallback();
@@ -182,11 +178,11 @@
 <div class="relative w-full">
 	<!-- Search Input -->
 	<div
-		class="flex items-center gap-2 rounded-full bg-white px-4 py-3 shadow-md {disabled
+		class="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-3 focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent {disabled
 			? 'opacity-50 cursor-not-allowed'
 			: ''}"
 	>
-		<Icon icon="lucide:map-pin" width="20" class="text-gray-400" />
+		<!-- Replaced Search icon with MapPin to match your design, or keep Search -->
 		<input
 			bind:this={inputElement}
 			bind:value={query}
@@ -198,54 +194,53 @@
 			{placeholder}
 			{disabled}
 			autocomplete="off"
-			class="w-full border-none bg-transparent text-base placeholder-gray-500 focus:ring-0 focus:outline-none"
+			class="w-full border-none bg-transparent text-base placeholder-gray-400 focus:ring-0 focus:outline-none"
 			aria-label={placeholder}
 		/>
+
 		{#if isLoading}
-			<div class="text-xs text-gray-500" transition:fade={{ duration: 150 }}>Loading…</div>
+			<Icon icon="lucide:loader-2" class="animate-spin text-gray-400" />
+		{:else}
+			<Icon icon="lucide:search" class="text-gray-400" />
 		{/if}
 	</div>
 
 	<!-- Suggestions Dropdown -->
 	{#if isOpen}
 		<ul
-			class="absolute top-full z-20 mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white shadow-md"
+			class="absolute top-full z-20 mt-2 max-h-60 w-full overflow-auto rounded-lg border border-gray-100 bg-white shadow-lg"
 			transition:slide={{ duration: 200 }}
 		>
 			{#if results.length > 0}
 				{#each results as place, index (place.place_id || place.id || index)}
 					<li
-						class="cursor-pointer px-4 py-2 text-left transition-colors {selectedIndex === index
-							? 'bg-gray-100'
+						class="cursor-pointer px-4 py-3 text-left transition-colors border-b border-gray-50 last:border-none {selectedIndex ===
+						index
+							? 'bg-gray-50'
 							: 'hover:bg-gray-50'}"
 						onmousedown={(e) => {
-							e.preventDefault();
+							e.preventDefault(); // Prevent input blur
 							selectPlace(place);
 						}}
 						onmouseenter={() => (selectedIndex = index)}
 						role="option"
-						aria-selected={selectedIndex === index ? 'true' : 'false'}
+						aria-selected={selectedIndex === index}
 					>
-						<div class="flex items-start justify-between gap-2">
+						<div class="flex items-start gap-3">
+							<Icon icon="lucide:map-pin" class="mt-1 text-gray-400 shrink-0" />
 							<div class="flex-1 min-w-0">
 								<div class="font-medium text-gray-900">{place.main_text || place.name}</div>
 								{#if place.secondary_text}
-									<div class="text-xs text-gray-500 truncate">{place.secondary_text}</div>
+									<div class="text-sm text-gray-500 truncate">{place.secondary_text}</div>
 								{/if}
 							</div>
-							<span
-								class="px-2 py-0.5 text-xs font-medium rounded {place.source === 'db'
-									? 'bg-green-100 text-green-700'
-									: 'bg-blue-100 text-blue-700'}"
-							>
-								{place.source === 'db' ? 'Saved' : 'Google'}
-							</span>
 						</div>
 					</li>
 				{/each}
-			{:else}
+			{:else if !isLoading && query.length >= 2}
+				<!-- No Results / Fallback Trigger inside dropdown -->
 				<li
-					class="cursor-pointer px-4 py-2 text-gray-500 hover:bg-gray-100 transition-colors"
+					class="cursor-pointer px-4 py-3 text-gray-500 hover:bg-gray-50 transition-colors flex items-center gap-2"
 					onmousedown={(e) => {
 						e.preventDefault();
 						openFallbackModal();
@@ -253,63 +248,58 @@
 					role="option"
 					aria-selected="false"
 				>
-					Can't find that place? Click to specify
+					<Icon icon="lucide:edit-3" class="text-green-600" />
+					<div>
+						<p class="font-medium text-green-600">Can't find that place?</p>
+						<p class="text-xs">Enter it manually</p>
+					</div>
 				</li>
 			{/if}
 		</ul>
 	{/if}
 </div>
 
-<!-- Fallback Modal -->
+<!-- Internal Fallback Modal -->
 {#if fallbackOpen}
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-		onclick={closeFallbackModal}
-		onkeydown={(e) => e.key === 'Escape' && closeFallbackModal()}
-		transition:fade={{ duration: 200 }}
+		class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 outline-none"
+		onclick={(e) => {
+			// Check if the click is on the backdrop itself, not the child
+			if (e.target === e.currentTarget) closeFallbackModal();
+		}}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') closeFallbackModal();
+		}}
 		role="dialog"
 		aria-modal="true"
-		aria-labelledby="modal-title"
 		tabindex="-1"
 	>
 		<div
-			class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
-			transition:slide={{ duration: 300 }}
+			class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+			transition:fade={{ duration: 200 }}
 			role="document"
 		>
-			<!-- Header -->
 			<div class="mb-4 flex items-center justify-between">
-				<h2 id="modal-title" class="text-xl font-semibold text-gray-900">Specify Location</h2>
-				<button
-					onclick={closeFallbackModal}
-					class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-					aria-label="Close"
-					type="button"
-				>
+				<h2 class="text-xl font-semibold text-gray-900">Specify Location</h2>
+				<button onclick={closeFallbackModal} class="rounded-full p-1 hover:bg-gray-100">
 					<Icon icon="lucide:x" width="20" />
 				</button>
 			</div>
 
-			<!-- Form -->
 			<form onsubmit={submitFallback} class="space-y-4">
 				<div>
 					<label for="place-name" class="block text-sm font-medium text-gray-700 mb-1">
-						Hostel name <span class="text-red-500">*</span>
+						Location Name <span class="text-red-500">*</span>
 					</label>
 					<input
 						id="place-name"
 						type="text"
 						bind:value={fallbackData.name}
 						onkeydown={handleModalKeydown}
-						class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+						class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
 						required
-						aria-required="true"
 					/>
 				</div>
-
 				<div>
 					<label for="landmark" class="block text-sm font-medium text-gray-700 mb-1">
 						Landmark (Optional)
@@ -320,23 +310,21 @@
 						bind:value={fallbackData.landmark}
 						onkeydown={handleModalKeydown}
 						placeholder="e.g., Near Rubis station"
-						class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+						class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
 					/>
 				</div>
-
-				<!-- Actions -->
 				<div class="flex gap-3 pt-2">
 					<button
 						onclick={closeFallbackModal}
 						type="button"
-						class="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+						class="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50"
 					>
 						Cancel
 					</button>
 					<button
 						type="submit"
 						disabled={!canSubmitFallback}
-						class="flex-1 rounded-lg bg-gradient-to-r from-purple-600 to-purple-800 px-4 py-2 font-medium text-white hover:from-purple-700 hover:to-purple-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+						class="flex-1 rounded-lg bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700 disabled:opacity-50"
 					>
 						Continue
 					</button>

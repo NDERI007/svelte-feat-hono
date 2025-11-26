@@ -1,33 +1,32 @@
 @import 'tailwindcss';
 @import '@fontsource/fira-mono';
+@import '@fontsource/inter';
 @plugin '@tailwindcss/typography';
 
 :root {
 	--font-body:
-		Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-		'Open Sans', 'Helvetica Neue', sans-serif;
+		'Inter', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+		Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 	--font-mono: 'Fira Mono', monospace;
 
-	/* Theme Colors 
-       bg-1 is your specific beige. 
-       bg-0 and bg-2 are slight variations for the gradient depth.
-    */
-	--color-bg-0: #ffffff; /* Pure white highlight */
-	--color-bg-1: #fefaef; /* Your Beige */
-	--color-bg-2: #f0eee2; /* Slightly darker beige for bottom shadow */
-
-	/* Green-900 is approx #14532d in Tailwind */
-	--color-theme-1: #14532d; /* Green-900 (Main Brand Color) */
-	--color-theme-2: #166534; /* Green-800 (Secondary/Hover) */
-
-	/* Using a very dark green/gray for text creates better harmony with beige than pure black */
-	--color-text: #052e16; /* Green-950 (High contrast text) */
+	/* Theme Colors */
+	--color-bg-0: #ffffff;
+	--color-bg-1: #fefaef;
+	--color-bg-2: #f0eee2;
+	--color-theme-1: #14532d;
+	--color-theme-2: #166534;
+	--color-text: #052e16;
 
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
 
 	font-family: var(--font-body);
 	color: var(--color-text);
+
+	/* Font rendering improvements */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
 }
 
 body {
@@ -36,10 +35,6 @@ body {
 	background-attachment: fixed;
 	background-color: var(--color-bg-1);
 	background-size: 100vw 100vh;
-	/* Updated gradients to feel like high-quality paper.
-       The radial gradient adds a subtle white spotlight in the center.
-       The linear gradient flows from white -> beige -> darker beige.
-    */
 	background-image:
 		radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 100%),
 		linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 100%);
@@ -51,10 +46,27 @@ p {
 	font-weight: 400;
 }
 
+h1 {
+	font-size: 2rem;
+	text-align: center;
+	color: var(--color-theme-1);
+	font-weight: 600; /* Slightly bolder for headings */
+}
+
+h2 {
+	font-size: 1rem;
+	color: var(--color-theme-1);
+	font-weight: 600;
+}
+
+h3 {
+	font-weight: 600; /* Semibold for product names */
+	letter-spacing: -0.01em; /* Slight tightening for better appearance */
+}
+
 p {
 	line-height: 1.5;
 }
-
 a {
 	color: var(--color-theme-1); /* Links now use Green-900 */
 	text-decoration: none;
