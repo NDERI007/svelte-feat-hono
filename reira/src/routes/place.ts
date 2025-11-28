@@ -62,7 +62,7 @@ router.get("/auto-comp", validateQuery(PlacesQuerySchema), async (c) => {
   }
 });
 
-router.post("/place-details", withAuth(), async (c) => {
+router.post("/place-details", withAuth(["user"]), async (c) => {
   try {
     const body = await c.req.json();
 

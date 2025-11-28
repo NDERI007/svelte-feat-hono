@@ -12,4 +12,5 @@ export interface Env {
   MPESA_CONSUMER_SECRET: string;
   MPESA_SHORTCODE: number;
   MPESA_PASSKEY: string;
+  BASE_URL: string;
 }

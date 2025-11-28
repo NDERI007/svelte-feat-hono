@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { AppContext } from "./types/hono";
 import { initServices } from "./middleware/init-services";
 import router from "./index";
+import { globalErrorHandler } from "./middleware/errorHandler";
 
 const app = new Hono<AppContext>();
 
@@ -14,6 +15,18 @@ app.use(
     credentials: true, // Required for cookies to work
   })
 );
+app.onError(globalErrorHandler);
+
+// Apply 404 Handler (Optional but recommended)
+app.notFound((c) => {
+  return c.json(
+    {
+      success: false,
+      error: { message: "Route not found", code: "NOT_FOUND" },
+    },
+    404
+  );
+});
 
 // Debug middleware
 app.use("*", async (c, next) => {
