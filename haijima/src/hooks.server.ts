@@ -1,41 +1,49 @@
-import type { Handle } from '@sveltejs/kit';
-
-const API_URL = 'http://127.0.0.1:8787';
+import { redirect, type Handle } from '@sveltejs/kit';
+import { PUBLIC_API_URL } from '$env/static/public';
+const API_URL = PUBLIC_API_URL;
 
 export const handle: Handle = async ({ event, resolve }) => {
-	// 1. Get the session ID from the browser's cookies
+	// AUTHENTICATION (Who are you?)
+
 	const sessionId = event.cookies.get('sessionId');
 
-	if (!sessionId) {
-		event.locals.user = null;
-	} else {
-		// 2. Validate with Hono Backend
+	// Default to null
+	event.locals.user = null;
+	event.locals.sessionId = sessionId; // Useful to keep this for +page.server.ts fetches
+
+	if (sessionId) {
 		try {
-			// We must manually pass the cookie to Hono
+			// Validate with Hono Backend
 			const res = await fetch(`${API_URL}/api/auth/context-verif`, {
 				headers: {
 					Cookie: `sessionId=${sessionId}`
-				},
-				credentials: 'include'
+				}
+				// credentials: 'include' is not needed here (server-to-server fetch)
 			});
 
-			const data = await res.json();
-			console.log('Hono Status:', res.status); // Likely 200
-			console.log('Hono Payload:', JSON.stringify(data, null, 2)); // <--- THIS IS KEY
-
-			if (data.authenticated && data.user) {
-				console.log('✅ Setting locals.user');
-				event.locals.user = data.user;
-			} else {
-				console.log('❌ Auth rejected by logic');
-				// Token is invalid/expired according to Hono
-				event.locals.user = null;
-				// Optional: Cleanup invalid cookie
-				event.cookies.delete('sessionId', { path: '/' });
+			if (res.ok) {
+				const data = await res.json();
+				if (data.authenticated && data.user) {
+					event.locals.user = data.user;
+				} else {
+					// Token is invalid/expired according to Hono
+					// Clean up the bad cookie so the browser stops sending it
+					event.cookies.delete('sessionId', { path: '/' });
+				}
 			}
 		} catch (err) {
 			console.error('Auth Check Failed:', err);
-			event.locals.user = null;
+		}
+	}
+
+	// AUTHORIZATION (Are you allowed here?)
+
+	// Check if the directory path contains "(protected)"
+	if (event.route.id?.includes('(protected)')) {
+		// If the user was NOT populated in Step 1, kick them out
+		if (!event.locals.user) {
+			const fromUrl = event.url.pathname + event.url.search;
+			throw redirect(303, `/login?from=${encodeURIComponent(fromUrl)}`);
 		}
 	}
 

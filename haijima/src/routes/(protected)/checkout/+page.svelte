@@ -15,9 +15,7 @@
 	// --- Types ---
 	import type { SavedAddress } from '$lib/schemas/address';
 	import type { DeliveryLocation } from '$lib/schemas/address';
-
-	// --- Local State (Runes) ---
-	const auth = getAuthState(); // Access Auth Context
+	import { env } from 'process';
 
 	let mpesaPhone = $state('');
 	let isEditing = $state(false);
@@ -48,7 +46,7 @@
 		mapUrl: 'https://maps.google.com/?q=Moringa+Centre'
 	};
 
-	const API_BASE = 'http://localhost:8787';
+	const API_BASE = env.PUBLIC_API_URL;
 	// --- Effects ---
 
 	// 1. Fetch Saved Addresses when modal opens
@@ -61,7 +59,9 @@
 			try {
 				const res = await fetch(`${API_BASE}/api/addr/look-up`, {
 					method: 'GET',
-					headers: { 'Content-Type': 'application/json' }
+					headers: { 'Content-Type': 'application/json' },
+
+					credentials: 'include'
 				});
 
 				if (!res.ok) throw new Error('Failed to fetch addresses');
@@ -95,12 +95,6 @@
 	}
 
 	async function handlePlaceOrder() {
-		if (!auth.isAuthenticated) {
-			toast.error('Please login to place an order');
-			goto('/login');
-			return;
-		}
-
 		if (isDelivery && !deliveryStore.place) {
 			toast.error('Please select a delivery address');
 			return;
@@ -180,23 +174,7 @@
 	}
 </script>
 
-{#if !auth.isAuthenticated}
-	<div class="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 text-center">
-		<div class="rounded-xl bg-white p-8 shadow-sm">
-			<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center text-green-600">
-				<Icon icon="lucide:log-in" width="64" height="64" />
-			</div>
-			<h2 class="text-xl font-semibold text-gray-900">Login Required</h2>
-			<p class="mt-2 text-gray-500">Please login to continue with checkout</p>
-			<button
-				onclick={() => goto('/login', { state: { from: '/checkout' } })}
-				class="mt-4 rounded-lg bg-green-600 px-6 py-2 font-semibold text-white transition hover:bg-green-700"
-			>
-				Go to Login
-			</button>
-		</div>
-	</div>
-{:else if cartStore.items.length === 0}
+{#if cartStore.items.length === 0}
 	<div class="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 text-center">
 		<div class="mb-4 flex items-center justify-center text-gray-300">
 			<Icon icon="lucide:shopping-bag" width="64" height="64" />

@@ -5,6 +5,7 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
+			sessionId?: string;
 			user: {
 				role: string;
 				email: string;
