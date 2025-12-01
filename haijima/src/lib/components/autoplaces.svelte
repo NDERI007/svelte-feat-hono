@@ -7,12 +7,14 @@
 	import type { PlaceResult } from '$lib/schemas/address'; // Ensure types exist
 
 	interface Props {
+		id?: string;
 		onPlaceSelected?: (place: PlaceResult) => void;
 		placeholder?: string;
 		disabled?: boolean;
 	}
 
 	let {
+		id,
 		onPlaceSelected,
 		placeholder = 'Enter delivery address',
 		disabled = false

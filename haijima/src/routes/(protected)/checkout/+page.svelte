@@ -15,7 +15,7 @@
 	// --- Types ---
 	import type { SavedAddress } from '$lib/schemas/address';
 	import type { DeliveryLocation } from '$lib/schemas/address';
-	import { env } from 'process';
+	import { PUBLIC_API_URL } from '$env/static/public';
 
 	let mpesaPhone = $state('');
 	let isEditing = $state(false);
@@ -46,7 +46,7 @@
 		mapUrl: 'https://maps.google.com/?q=Moringa+Centre'
 	};
 
-	const API_BASE = env.PUBLIC_API_URL;
+	const API_BASE = PUBLIC_API_URL;
 	// --- Effects ---
 
 	// 1. Fetch Saved Addresses when modal opens

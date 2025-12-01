@@ -216,7 +216,7 @@ router.post(
  * GET /history
  * Get order history for the logged-in user
  */
-router.get("/history", async (c) => {
+router.get("/history", withAuth(["user"]), async (c) => {
   const supabase = c.get("supabase");
   const user = c.get("user");
 
@@ -335,7 +335,7 @@ router.get("/:orderID/payment-status", withAuth(["user"]), async (c) => {
  * POST /:orderId/confirm-delivery
  * Customer confirms delivery
  */
-router.post("/:orderId/confirm-delivery", async (c) => {
+router.post("/:orderId/confirm-delivery", withAuth(["user"]), async (c) => {
   const supabase = c.get("supabase");
   const user = c.get("user");
   const orderId = c.req.param("orderId");
