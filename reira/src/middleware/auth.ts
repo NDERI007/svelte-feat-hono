@@ -135,7 +135,7 @@ export function withAuth(
 
     // 2. Get Session Token from Cookie
     const sessionToken = getCookie(c, "sessionId");
-
+    console.log("1. Cookie Token:", sessionToken);
     if (!sessionToken) {
       return c.json(
         {
@@ -211,6 +211,8 @@ export function withAuth(
     };
 
     c.set("user", user);
+    console.log("2. User Role in Session:", user.role); // DEBUG LOG
+    console.log("3. Required Roles:", requiredRoles);
 
     // 7. Role-Based Access Control
     if (requiredRoles && requiredRoles.length > 0) {

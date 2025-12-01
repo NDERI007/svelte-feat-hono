@@ -6,7 +6,7 @@ export interface Env {
   UPSTASH_REDIS_REST_TOKEN: string;
   GOOGLE_CLOUD_KEY: string;
   RESEND_KEY: string;
-  SIMULATE_SUCCESS: boolean;
+  SIMULATE_SUCCESS: string;
   NODE_ENV: string;
   MPESA_CONSUMER_KEY: string;
   MPESA_CONSUMER_SECRET: string;

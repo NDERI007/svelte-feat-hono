@@ -43,7 +43,7 @@ const createOrderSchema = z
     subtotal: z.number().min(0),
     delivery_fee: z.number().min(0),
     total_amount: z.number().min(0),
-    order_notes: z.string().optional(),
+    order_notes: z.string().nullable().optional(),
 
     items: z
       .array(orderItemSchema)
@@ -60,75 +60,83 @@ const createOrderSchema = z
     }
   });
 
-router.post("/create", zValidator("json", createOrderSchema), async (c) => {
-  const supabase = c.get("supabase");
-  const user = c.get("user");
-  const orderData = c.req.valid("json");
+router.post(
+  "/create",
+  withAuth(["user"]),
+  zValidator("json", createOrderSchema),
 
-  // 1. CREATE ORDER (Database Transaction)
-  const { data: orderID, error: rpcError } = await supabase.rpc(
-    "create_order_with_items",
-    {
-      p_user_id: user.userID,
-      p_delivery_type: orderData.delivery_type,
-      p_mpesa_phone: orderData.mpesa_phone, // Zod cleaned this
-      p_subtotal: orderData.subtotal,
-      p_delivery_fee: orderData.delivery_fee,
-      p_total_amount: orderData.total_amount,
-      p_items: orderData.items,
-      p_delivery_address_main_text:
-        orderData.delivery_address_main_text || null,
-      p_delivery_address_secondary_text:
-        orderData.delivery_address_secondary_text || null,
-      p_delivery_place_id: orderData.delivery_place_id || null,
-      p_delivery_lat: orderData.delivery_lat || null,
-      p_delivery_lng: orderData.delivery_lng || null,
-      p_delivery_instructions: orderData.order_notes || null,
+  async (c) => {
+    const supabase = c.get("supabase");
+    const user = c.get("user");
+    const notifications = c.get("notifications");
+    const orderData = c.req.valid("json");
+
+    // 1. CREATE ORDER (Database Transaction)
+    const { data: orderID, error: rpcError } = await supabase.rpc(
+      "create_order_with_items",
+      {
+        p_user_id: user.userID,
+        p_delivery_type: orderData.delivery_type,
+        p_mpesa_phone: orderData.mpesa_phone, // Zod cleaned this
+        p_subtotal: orderData.subtotal,
+        p_delivery_fee: orderData.delivery_fee,
+        p_total_amount: orderData.total_amount,
+        p_items: orderData.items,
+        p_delivery_address_main_text:
+          orderData.delivery_address_main_text || null,
+        p_delivery_address_secondary_text:
+          orderData.delivery_address_secondary_text || null,
+        p_delivery_place_id: orderData.delivery_place_id || null,
+        p_delivery_lat: orderData.delivery_lat || null,
+        p_delivery_lng: orderData.delivery_lng || null,
+        p_delivery_instructions: orderData.order_notes || null,
+      }
+    );
+
+    if (rpcError) {
+      // Preserve your specific error logic
+      let msg = "Failed to create order";
+
+      if (
+        rpcError.message.includes("unavailable") ||
+        rpcError.message.includes("requires a variant")
+      ) {
+        msg = rpcError.message;
+      } else if (rpcError.message.includes("mismatch")) {
+        msg = "Price validation failed. Please refresh and try again.";
+      } else if (rpcError.message.includes("Invalid product_id")) {
+        msg = "Some products are no longer available.";
+      }
+
+      // ✅ THROW: Global handler will catch this and send 400
+      throw new AppError(msg, 400);
     }
-  );
-
-  if (rpcError) {
-    // Preserve your specific error logic
-    let msg = "Failed to create order";
-
-    if (
-      rpcError.message.includes("unavailable") ||
-      rpcError.message.includes("requires a variant")
-    ) {
-      msg = rpcError.message;
-    } else if (rpcError.message.includes("mismatch")) {
-      msg = "Price validation failed. Please refresh and try again.";
-    } else if (rpcError.message.includes("Invalid product_id")) {
-      msg = "Some products are no longer available.";
+    if (!orderID) {
+      throw new AppError("Order creation failed (No ID returned)", 500);
     }
 
-    // ✅ THROW: Global handler will catch this and send 400
-    throw new AppError(msg, 400);
-  }
-  if (!orderID) {
-    throw new AppError("Order creation failed (No ID returned)", 500);
-  }
+    c.executionCtx.waitUntil(
+      processMpesaPayment(
+        c.env,
+        supabase,
+        notifications,
+        orderData.mpesa_phone,
+        orderData.total_amount,
+        orderID
+      )
+    );
 
-  c.executionCtx.waitUntil(
-    processMpesaPayment(
-      c.env,
-      supabase,
-      orderData.mpesa_phone,
-      orderData.total_amount,
-      orderID
-    )
-  );
-
-  // The user gets this response instantly (usually < 200ms)
-  return c.json(
-    {
-      success: true,
-      message: "Order created. Initiating payment...",
-      order: orderID, // Frontend needs this to subscribe
-    },
-    201
-  );
-});
+    // The user gets this response instantly (usually < 200ms)
+    return c.json(
+      {
+        success: true,
+        message: "Order created. Initiating payment...",
+        order: orderID, // Frontend needs this to subscribe
+      },
+      201
+    );
+  }
+);
 // ---------------------------------------------------------
 // 1. ADMIN ROUTES
 // ---------------------------------------------------------
@@ -275,7 +283,7 @@ router.get("/:orderID/details", async (c) => {
  * GET /:orderID
  * Get single order details (Alternative lightweight view)
  */
-router.get("/:orderID", async (c) => {
+router.get("/:orderID", withAuth(["user"]), async (c) => {
   const supabase = c.get("supabase");
   const user = c.get("user");
   const orderID = c.req.param("orderID");
@@ -296,7 +304,7 @@ router.get("/:orderID", async (c) => {
 /**
  * GET /:orderID/payment-status
  */
-router.get("/:orderID/payment-status", async (c) => {
+router.get("/:orderID/payment-status", withAuth(["user"]), async (c) => {
   const supabase = c.get("supabase");
   const user = c.get("user");
   const orderID = c.req.param("orderID");

@@ -15,7 +15,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 			const res = await fetch(`${API_URL}/api/auth/context-verif`, {
 				headers: {
 					Cookie: `sessionId=${sessionId}`
-				}
+				},
+				credentials: 'include'
 			});
 
 			const data = await res.json();

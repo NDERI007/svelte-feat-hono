@@ -6,8 +6,8 @@
 	// --- Logic Imports ---
 	import { cartStore } from '$lib/stores/cart.svelte';
 	import { deliveryStore, FREE_DELIVERY_THRESHOLD } from '$lib/stores/delivery.svelte';
-	import { getAuthState } from '$lib/stores/auth.svelte'; // Using your Context Pattern
-	import { getImageUrl } from '$lib/utils/getImage'; // Ensure this path is correct
+	import { getAuthState } from '$lib/stores/auth.svelte';
+	import { getImageUrl } from '$lib/utils/getImage';
 
 	// --- Components ---
 	import AddressModal from '$lib/components/AddressModal.svelte';
@@ -48,6 +48,7 @@
 		mapUrl: 'https://maps.google.com/?q=Moringa+Centre'
 	};
 
+	const API_BASE = 'http://localhost:8787';
 	// --- Effects ---
 
 	// 1. Fetch Saved Addresses when modal opens
@@ -58,7 +59,7 @@
 		const fetchSavedAddresses = async () => {
 			isLoadingAddresses = true;
 			try {
-				const res = await fetch('/api/addr/look-up', {
+				const res = await fetch(`${API_BASE}/api/addr/look-up`, {
 					method: 'GET',
 					headers: { 'Content-Type': 'application/json' }
 				});
@@ -149,10 +150,11 @@
 		};
 
 		try {
-			const response = await fetch('/api/orders/create', {
+			const response = await fetch(`${API_BASE}/api/orders/create`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(orderData)
+				body: JSON.stringify(orderData),
+				credentials: 'include'
 			});
 
 			const result = await response.json();
@@ -167,7 +169,7 @@
 			toast.success('Order created successfully!');
 			cartStore.clearCart();
 			deliveryStore.clearDelivery();
-			goto(`/order-confirmation?orderID=${orderID}`);
+			goto(`/confirmation?orderID=${orderID}`);
 		} catch (err: unknown) {
 			console.error('Order creation failed:', err);
 			if (err instanceof Error) toast.error(err.message);

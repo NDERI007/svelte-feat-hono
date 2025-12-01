@@ -39,7 +39,7 @@ export async function getAccessToken(env: Env): Promise<string> {
 // =====================================================
 // Process Simulated Callback
 // =====================================================
-async function processSimulatedCallback(
+export async function processSimulatedCallback(
   // ✅ 1. Accept Dependencies Object
   deps: { supabase: SupabaseClient; notifications: NotificationService },
   checkoutRequestId: string,
@@ -93,7 +93,7 @@ export async function stkPush(
   amount: number,
   orderId: string
 ): Promise<STKPushResponse> {
-  if (env.SIMULATE_SUCCESS === true) {
+  if (env.SIMULATE_SUCCESS === "true") {
     console.log("🧪 DEV MODE: Simulating M-PESA payment");
 
     const fakeCheckoutRequestId = `ws_CO_${Date.now()}${Math.random()
@@ -110,21 +110,6 @@ export async function stkPush(
       ResponseDescription: "Success. Request accepted for processing",
       CustomerMessage: "Success. Request accepted for processing",
     };
-
-    await delay(3000);
-
-    try {
-      // ✅ 4. Pass dependencies to simulation
-      await processSimulatedCallback(
-        deps,
-        fakeCheckoutRequestId,
-        orderId,
-        amount,
-        phone
-      );
-    } catch (error) {
-      console.error("❌ Failed to process simulated callback:", error);
-    }
 
     return fakeResponse;
   }

@@ -9,7 +9,7 @@ const app = new Hono<AppContext>();
 
 // CORS first
 app.use(
-  "/*",
+  "/api/*",
   cors({
     origin: "http://localhost:5173", // Must match your frontend URL exactly
     credentials: true, // Required for cookies to work

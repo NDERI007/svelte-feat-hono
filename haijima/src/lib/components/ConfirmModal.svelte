@@ -3,7 +3,8 @@
 	import { quintOut } from 'svelte/easing';
 
 	let {
-		show,
+		show = $bindable(),
+		title,
 		message,
 		onConfirm,
 		onCancel,
@@ -12,51 +13,67 @@
 		loading = false
 	} = $props<{
 		show: boolean;
+		title?: string;
 		message: string;
 		onConfirm: () => void;
-		onCancel: () => void;
+		onCancel?: () => void;
 		confirmText?: string;
 		cancelText?: string;
 		loading?: boolean;
 	}>();
+
+	function close() {
+		if (loading) return;
+		show = false;
+		if (onCancel) onCancel();
+	}
+
+	// ✅ FIX: Handle backdrop click logic here instead of using stopPropagation on child
+	function handleBackdropClick(event: MouseEvent) {
+		// Only close if the user clicked the backdrop (currentTarget),
+		// not if they clicked the inner modal content (target).
+		if (event.target === event.currentTarget) {
+			close();
+		}
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') close();
+	}
 </script>
 
 {#if show}
-	<!-- 
-        BACKDROP
-        - Changed to a <div> to fix the nesting error.
-        - Added role="button" and tabindex="0" so it's still accessible/clickable.
-    -->
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm outline-none"
 		transition:fade={{ duration: 200 }}
-		onclick={onCancel}
-		onkeydown={(e) => e.key === 'Escape' && onCancel()}
+		onclick={handleBackdropClick}
+		onkeydown={handleKeydown}
 		role="button"
 		tabindex="0"
+		aria-label="Close modal"
 	>
-		<!-- 
-            MODAL BOX
-            - e.stopPropagation() prevents clicks inside the box from triggering the backdrop's onCancel.
-        -->
 		<div
 			role="dialog"
 			aria-modal="true"
-			class="w-full max-w-sm rounded-xl bg-[#FEFAEF] p-5 shadow-xl ring-1 ring-green-900/30 cursor-default"
-			transition:scale={{ start: 0.9, duration: 300, easing: quintOut, opacity: 0 }}
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.key === 'Escape' && onCancel()}
+			class="w-full max-w-sm cursor-default rounded-xl bg-[#FEFAEF] p-6 shadow-xl ring-1 ring-green-900/30"
+			transition:scale={{ start: 0.95, duration: 200, easing: quintOut }}
 			tabindex="-1"
 		>
-			<p class="mb-4 text-base font-medium text-green-900">
+			{#if title}
+				<h3 class="mb-2 text-lg font-bold text-green-900">
+					{title}
+				</h3>
+			{/if}
+
+			<p class="mb-6 text-base text-gray-700">
 				{message}
 			</p>
 
 			<div class="flex justify-end gap-3">
 				<button
-					onclick={onCancel}
+					onclick={close}
 					disabled={loading}
-					class="rounded-md border border-green-900/40 bg-transparent px-4 py-2 text-sm font-medium text-green-900 transition-colors hover:bg-green-900/10 disabled:opacity-50"
+					class="rounded-lg border border-green-900/20 bg-transparent px-4 py-2 text-sm font-semibold text-green-900 transition-colors hover:bg-green-900/5 disabled:opacity-50"
 				>
 					{cancelText}
 				</button>
@@ -64,9 +81,16 @@
 				<button
 					onclick={onConfirm}
 					disabled={loading}
-					class="rounded-md bg-green-900 px-4 py-2 text-sm font-medium text-[#FEFAEF] transition-colors hover:bg-green-800 disabled:opacity-50"
+					class="flex items-center gap-2 rounded-lg bg-green-900 px-4 py-2 text-sm font-semibold text-[#FEFAEF] transition-colors hover:bg-green-800 disabled:opacity-50"
 				>
-					{loading ? 'Processing...' : confirmText}
+					{#if loading}
+						<div
+							class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+						></div>
+						Processing...
+					{:else}
+						{confirmText}
+					{/if}
 				</button>
 			</div>
 		</div>
