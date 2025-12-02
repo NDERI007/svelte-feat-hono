@@ -391,83 +391,103 @@ Still have questions? Contact us at 0745340424 or 0727942764
 	}
 </script>
 
-<footer class="mt-auto bg-green-800 text-gray-300">
+<footer class="mt-auto" style="background-color: var(--color-text);">
 	<div class="mx-auto max-w-6xl px-6 py-12">
 		<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-			<!-- Company Info -->
+			<!-- Brand Column -->
 			<div>
-				<h3 class="mb-4 text-lg font-semibold text-white">Weddy's Kitchen</h3>
-
-				<div class="text-sm">
-					<p class="mb-2">
-						<span class="font-medium text-white">Delivery Area:</span>
+				<h3 class="mb-4 text-lg font-bold" style="color: var(--color-theme-1);">Weddy's Kitchen</h3>
+				<div class="text-sm" style="color: rgba(255, 255, 255, 0.8);">
+					<p class="mb-2 leading-relaxed" style="color: rgba(255, 255, 255, 0.6);">
+						<span class="text-white">Delivery Area:</span>
 						<br />
 						5km radius from School Campus
 					</p>
 				</div>
 			</div>
 
-			<!-- Legal Links -->
+			<!-- Legal Column -->
 			<div>
-				<h3 class="mb-4 text-lg font-semibold text-white">Legal</h3>
-				<ul class="space-y-2 text-sm">
+				<h3 class="mb-4 text-lg font-bold text-white">Legal</h3>
+				<ul class="space-y-3 text-sm" style="color: rgba(255, 255, 255, 0.8);">
 					<li>
-						<button onclick={() => openPage('terms')} class="transition-colors hover:text-white">
+						<button
+							onclick={() => openPage('terms')}
+							class="transition-colors hover:text-white relative group"
+							type="button"
+						>
 							Terms of Service
 						</button>
 					</li>
 					<li>
-						<button onclick={() => openPage('privacy')} class="transition-colors hover:text-white">
+						<button
+							onclick={() => openPage('privacy')}
+							class="transition-colors hover:text-white relative group"
+							type="button"
+						>
 							Privacy Policy
 						</button>
 					</li>
 					<li>
-						<button onclick={() => openPage('refund')} class="transition-colors hover:text-white">
+						<button
+							onclick={() => openPage('refund')}
+							class="transition-colors hover:text-white relative group"
+							type="button"
+						>
 							Refund Policy
 						</button>
 					</li>
 				</ul>
 			</div>
 
-			<!-- Help & Contact -->
+			<!-- Help Column -->
 			<div>
-				<h3 class="mb-4 text-lg font-semibold text-white">Help</h3>
-				<ul class="space-y-2 text-sm">
+				<h3 class="mb-4 text-lg font-bold text-white">Help</h3>
+				<ul class="space-y-3 text-sm" style="color: rgba(255, 255, 255, 0.8);">
 					<li>
-						<button onclick={() => openPage('faq')} class="transition-colors hover:text-white">
+						<button
+							onclick={() => openPage('faq')}
+							class="transition-colors hover:text-white relative group"
+							type="button"
+						>
 							FAQ
 						</button>
 					</li>
 					<li class="pt-2">
-						<span class="font-medium text-white">Contact Us:</span>
+						<span class="text-white">Contact Us:</span>
 						<br />
-						<a href="tel:0745340424" class="transition-colors hover:text-white">
-							0745340424/0727942764
+						<a
+							href="tel:0745340424"
+							class="transition-colors hover:text-white inline-block mt-1"
+							style="color: var(--color-theme-1);"
+						>
+							0745340424 / 0727942764
 						</a>
 					</li>
 				</ul>
 			</div>
 		</div>
 
-		<!-- Bottom Bar -->
-		<div class="mt-8 border-t border-gray-800 pt-8 text-center text-sm">
-			<p>&copy; 2025 Weddy's Kitchen. All rights reserved.</p>
+		<!-- Footer Bottom -->
+		<div
+			class="mt-10 border-t pt-8 text-center text-sm"
+			style="border-color: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.5);"
+		>
+			<p>&copy; {new Date().getFullYear()} Weddy's Kitchen. All rights reserved.</p>
 		</div>
 	</div>
 </footer>
 
-<!-- Legal Page Modal -->
+<!-- Modal -->
 {#if activePage}
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
 		transition:fade={{ duration: 200 }}
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="modal-title"
 		tabindex="-1"
 	>
-		<!-- Backdrop - clickable area to close -->
 		<button
 			class="absolute inset-0 w-full h-full cursor-default"
 			onclick={closePage}
@@ -477,18 +497,22 @@ Still have questions? Contact us at 0745340424 or 0727942764
 		></button>
 
 		<div
-			class="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg bg-white relative z-10"
+			class="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl relative z-10 shadow-2xl"
+			style="background-color: var(--color-bg-0); border: 1px solid var(--color-border);"
 			role="document"
 		>
 			<!-- Modal Header -->
-			<div class="flex items-center justify-between border-b p-6">
-				<h2 id="modal-title" class="text-2xl font-bold text-gray-900">
-					{legalPages[activePage].title}
+			<div
+				class="flex items-center justify-between border-b p-6"
+				style="border-color: var(--color-border); background-color: var(--color-bg-0);"
+			>
+				<h2 id="modal-title" class="text-2xl font-bold" style="color: var(--color-theme-1);">
+					{legalPages[activePage]?.title || 'Info'}
 				</h2>
 				<button
 					onclick={closePage}
-					onkeydown={(e) => e.key === 'Enter' && closePage()}
-					class="text-2xl leading-none text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
+					class="flex h-8 w-8 items-center justify-center rounded-lg text-xl leading-none transition-all hover:bg-[var(--color-bg-2)] focus:outline-none"
+					style="color: var(--color-text-muted);"
 					type="button"
 					aria-label="Close modal"
 				>
@@ -497,36 +521,53 @@ Still have questions? Contact us at 0745340424 or 0727942764
 			</div>
 
 			<!-- Modal Content -->
-			<div class="overflow-y-auto p-6">
+			<div class="overflow-y-auto p-6" style="background-color: var(--color-bg-1);">
 				<div class="prose prose-sm max-w-none">
-					{#each formatContent(legalPages[activePage].content) as line (line.key)}
-						{#if line.type === 'h2'}
-							<h2 class="mt-6 mb-3 text-xl font-bold text-gray-900">{line.content}</h2>
-						{:else if line.type === 'h3'}
-							<h3 class="mt-4 mb-2 text-lg font-semibold text-gray-800">{line.content}</h3>
-						{:else if line.type === 'bold'}
-							<p class="mt-3 mb-1 font-semibold text-gray-900">{line.content}</p>
-						{:else if line.type === 'li'}
-							<li class="ml-4 text-gray-700">{line.content}</li>
-						{:else if line.type === 'br'}
-							<br />
-						{:else if line.type === 'hr'}
-							<hr class="my-6 border-gray-300" />
-						{:else}
-							<p class="mb-2 text-gray-700">{line.content}</p>
-						{/if}
-					{/each}
+					{#if legalPages[activePage]}
+						{#each formatContent(legalPages[activePage].content) as line (line.key)}
+							{#if line.type === 'h2'}
+								<h2 class="mt-6 mb-3 text-xl font-bold" style="color: var(--color-text);">
+									{line.content}
+								</h2>
+							{:else if line.type === 'h3'}
+								<h3 class="mt-4 mb-2 text-lg font-semibold" style="color: var(--color-theme-1);">
+									{line.content}
+								</h3>
+							{:else if line.type === 'bold'}
+								<p class="mt-3 mb-1 font-semibold" style="color: var(--color-text);">
+									{line.content}
+								</p>
+							{:else if line.type === 'li'}
+								<li class="ml-4" style="color: var(--color-text-muted);">{line.content}</li>
+							{:else if line.type === 'br'}
+								<br />
+							{:else if line.type === 'hr'}
+								<hr class="my-6" style="border-color: var(--color-border);" />
+							{:else}
+								<p class="mb-2" style="color: var(--color-text-muted);">{line.content}</p>
+							{/if}
+						{/each}
+					{/if}
 				</div>
 			</div>
 
 			<!-- Modal Footer -->
-			<div class="flex justify-end border-t p-4">
+			<div
+				class="flex justify-end border-t p-4"
+				style="border-color: var(--color-border); background-color: var(--color-bg-0);"
+			>
 				<button
 					onclick={closePage}
-					onkeydown={(e) => {
-						if (e.key === 'Escape') closePage();
+					class="rounded-lg px-6 py-2.5 text-white font-semibold transition-all hover:shadow-lg"
+					style="background-color: var(--color-theme-1);"
+					onmouseenter={(e) => {
+						e.currentTarget.style.backgroundColor = 'var(--color-theme-2)';
+						e.currentTarget.style.transform = 'translateY(-1px)';
 					}}
-					class="rounded-lg bg-gray-900 px-6 py-2 text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500"
+					onmouseleave={(e) => {
+						e.currentTarget.style.backgroundColor = 'var(--color-theme-1)';
+						e.currentTarget.style.transform = 'translateY(0)';
+					}}
 					type="button"
 				>
 					Close

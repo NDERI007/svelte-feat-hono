@@ -90,7 +90,7 @@
 		</div>
 
 		<!-- Items Area -->
-		<div class="flex-1 overflow-y-auto bg-[#fefaef] p-3 sm:p-4">
+		<div class="flex-1 overflow-y-auto p-3 sm:p-4">
 			{#if cartStore.items.length === 0}
 				<!-- Empty State -->
 				<div class="flex h-full flex-col items-center justify-center text-center">

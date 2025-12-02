@@ -1,0 +1,10 @@
+packages:
+  - haijima
+  - reira
+
+ignoredBuiltDependencies:
+  - sharp
+
+onlyBuiltDependencies:
+  - esbuild
+  - workerd

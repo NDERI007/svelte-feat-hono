@@ -124,7 +124,10 @@
 				/>
 			{/if}
 		{:else}
-			<div class="flex h-full items-center justify-center text-gray-400 bg-gray-100 rounded-2xl">
+			<div
+				class="flex h-full items-center justify-center rounded-2xl"
+				style="background-color: var(--color-bg-2); color: var(--color-text-lighter);"
+			>
 				<Icon icon="lucide:image-off" width="32" height="32" />
 			</div>
 		{/if}
@@ -145,14 +148,14 @@
 >
 	<div
 		class="relative mb-3 aspect-square overflow-hidden rounded-2xl"
-		style="background-color: var(--color-bg-2);"
+		style="background-color: var(--color-bg-0);"
 	>
 		{@render productImage(false)}
 		{#if !product.available}
 			<div class="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
 				<span
 					class="rounded-full px-4 py-1.5 text-sm font-medium"
-					style="background-color: var(--color-bg-1); color: var(--color-text);"
+					style="background-color: var(--color-bg-0); color: var(--color-text);"
 				>
 					Unavailable
 				</span>
@@ -160,17 +163,17 @@
 		{:else}
 			<div
 				class="absolute right-3 bottom-3 flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-all duration-200 group-hover:scale-110 active:scale-95 z-10"
-				style="background-color: var(--color-bg-1);"
+				style="background-color: var(--color-bg-0);"
 			>
 				<Icon icon="lucide:plus" class="h-5 w-5" style="color: var(--color-theme-1);" />
 			</div>
 		{/if}
 	</div>
-	<div class="space-y-1 text-center">
-		<h3 class="line-clamp-2 text-sm font-semibold" style="color: var(--color-text);">
+	<div class="space-y-1 text-left">
+		<h3 class="line-clamp-2 product-name">
 			{product.name}
 		</h3>
-		<p class="text-base font-bold" style="color: var(--color-theme-1);">{displayPrice}</p>
+		<p class="price-text">{displayPrice}</p>
 	</div>
 </button>
 
@@ -192,21 +195,23 @@
 		<!-- Modal Content -->
 		<div
 			class="relative z-10 flex flex-col w-full max-w-lg max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl"
-			style="background-color: var(--color-bg-1);"
+			style="background-color: var(--color-bg-0);"
 			transition:scale={{ start: 0.95, duration: 200 }}
 		>
 			<!-- Header -->
 			<div
 				class="sticky top-0 z-10 flex items-center justify-between p-4"
-				style="border-bottom: 1px solid rgba(20, 83, 45, 0.1); background-color: var(--color-bg-1);"
+				style="border-bottom: 1px solid var(--color-border); background-color: var(--color-bg-0);"
 			>
-				<h2 class="text-lg font-semibold truncate pr-4" style="color: var(--color-theme-1);">
+				<h2 class="truncate pr-4" style="color: var(--color-text);">
 					{product.name}
 				</h2>
 				<button
 					onclick={closeModal}
-					class="rounded-full p-1 transition-colors hover:bg-white/50"
+					class="rounded-full p-1 transition-colors"
 					style="color: var(--color-text);"
+					onmouseenter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-2)')}
+					onmouseleave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
 				>
 					<Icon icon="lucide:x" class="h-5 w-5" />
 				</button>
@@ -243,13 +248,25 @@
                                         {selectedVariant?.id === variant.id
 											? 'shadow-md'
 											: variant.is_available
-												? 'hover:bg-white/50'
+												? ''
 												: 'cursor-not-allowed line-through'}"
 										style={selectedVariant?.id === variant.id
-											? `background-color: var(--color-theme-1); color: var(--color-bg-1); border-color: var(--color-theme-1);`
+											? `background-color: var(--color-theme-1); color: white; border-color: var(--color-theme-1);`
 											: variant.is_available
-												? `background-color: var(--color-bg-1); color: var(--color-text); border-color: rgba(20, 83, 45, 0.2);`
-												: `background-color: var(--color-bg-2); color: rgba(5, 46, 22, 0.4); border-color: rgba(20, 83, 45, 0.1);`}
+												? `background-color: var(--color-bg-0); color: var(--color-text); border-color: var(--color-border);`
+												: `background-color: var(--color-bg-2); color: var(--color-text-lighter); border-color: var(--color-border-light);`}
+										onmouseenter={(e) => {
+											if (variant.is_available && selectedVariant?.id !== variant.id) {
+												e.currentTarget.style.borderColor = 'var(--color-theme-1)';
+												e.currentTarget.style.backgroundColor = 'var(--color-theme-light)';
+											}
+										}}
+										onmouseleave={(e) => {
+											if (variant.is_available && selectedVariant?.id !== variant.id) {
+												e.currentTarget.style.borderColor = 'var(--color-border)';
+												e.currentTarget.style.backgroundColor = 'var(--color-bg-0)';
+											}
+										}}
 									>
 										{variant.size_name}
 									</button>
@@ -265,7 +282,7 @@
 
 					<div
 						class="mb-6 rounded-xl p-4 space-y-4 not-prose"
-						style="background-color: rgba(255, 255, 255, 0.5); border: 1px solid rgba(20, 83, 45, 0.1);"
+						style="background-color: var(--color-bg-1); border: 1px solid var(--color-border);"
 					>
 						<div class="flex items-center justify-between">
 							<span class="font-medium" style="color: var(--color-text);">Quantity</span>
@@ -273,7 +290,7 @@
 						</div>
 						<div
 							class="flex items-center justify-between pt-3"
-							style="border-top: 1px solid rgba(20, 83, 45, 0.1);"
+							style="border-top: 1px solid var(--color-border);"
 						>
 							<span style="color: var(--color-text);">Subtotal</span>
 							<span class="text-xl font-bold" style="color: var(--color-theme-1);"
@@ -287,13 +304,13 @@
 			<!-- Footer -->
 			<div
 				class="p-4 flex gap-3"
-				style="border-top: 1px solid rgba(20, 83, 45, 0.1); background-color: var(--color-bg-1);"
+				style="border-top: 1px solid var(--color-border); background-color: var(--color-bg-0);"
 			>
 				<button
 					onclick={handleAdd}
 					disabled={isLoadingVariants || (!hasDirectPrice && !selectedVariant)}
-					class="flex-1 rounded-lg py-3 text-white font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-					style="background-color: var(--color-theme-1);"
+					class="flex-1 rounded-lg py-3 font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+					style="background-color: var(--color-theme-1); color: white;"
 					onmouseenter={(e) =>
 						!e.currentTarget.disabled &&
 						(e.currentTarget.style.backgroundColor = 'var(--color-theme-2)')}
@@ -305,8 +322,18 @@
 				</button>
 				<button
 					onclick={closeModal}
-					class="rounded-lg px-6 font-medium transition-colors hover:bg-white/50"
-					style="border: 1px solid rgba(20, 83, 45, 0.3); color: var(--color-text);"
+					class="rounded-lg px-6 font-medium transition-all"
+					style="border: 1px solid var(--color-border); color: var(--color-text); background-color: var(--color-bg-0);"
+					onmouseenter={(e) => {
+						e.currentTarget.style.borderColor = 'var(--color-theme-1)';
+						e.currentTarget.style.color = 'var(--color-theme-1)';
+						e.currentTarget.style.backgroundColor = 'var(--color-theme-light)';
+					}}
+					onmouseleave={(e) => {
+						e.currentTarget.style.borderColor = 'var(--color-border)';
+						e.currentTarget.style.color = 'var(--color-text)';
+						e.currentTarget.style.backgroundColor = 'var(--color-bg-0)';
+					}}
 				>
 					Cancel
 				</button>

@@ -1,0 +1,21 @@
+{
+  "name": "svelte-feat-hono",
+  "version": "1.0.0",
+  "description": "This is a repeat of the food-app and i was curious how it would turn out when i redo it using svelte and hono",
+  "private": "true",
+  "scripts": {
+    "dev": "pnpm -r run dev",
+    "build": "pnpm -r run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NDERI007/svelte-feat-hono.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NDERI007/svelte-feat-hono/issues"
+  },
+  "homepage": "https://github.com/NDERI007/svelte-feat-hono#readme"
+}

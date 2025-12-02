@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Feature from './_components/feature.svelte';
+	import Feedback from './_components/feedback.svelte';
 	import Hero from './_components/hero.svelte';
 	import Navbar from './_components/navbar.svelte';
 </script>
@@ -12,5 +13,6 @@
 	/>
 </svelte:head>
 <Navbar />
+<Feedback />
 <Hero />
 <Feature />

@@ -2,7 +2,6 @@
 	import { page } from '$app/state';
 	import { getAuthState } from '$lib/stores/auth.svelte';
 	import Icon from '@iconify/svelte';
-	import { goto } from '$app/navigation'; // Only for programmatic nav (Logout/Login)
 
 	let { open, onClose } = $props<{
 		open: boolean;
@@ -37,17 +36,20 @@
 {/snippet}
 
 {#if open}
+	<!-- Backdrop -->
 	<button
 		class="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none border-0 cursor-default"
 		onclick={onClose}
 		aria-label="Close sidebar"
 	></button>
 
+	<!-- Sidebar Container -->
 	<div
 		class="fixed z-50 flex flex-col bg-white shadow-2xl transition-all duration-200
         inset-y-0 right-0 left-0 sm:right-auto sm:w-80
         md:inset-auto md:top-16 md:right-4 md:left-auto md:w-64 md:rounded-xl md:border md:border-gray-200"
 	>
+		<!-- 1. Mobile Header (Close Button) -->
 		<div
 			class="flex flex-shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3 md:hidden"
 		>
@@ -67,6 +69,7 @@
 			</button>
 		</div>
 
+		<!-- Desktop Close Button -->
 		<button
 			onclick={onClose}
 			class="absolute top-2 right-2 z-10 hidden rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 md:block"
@@ -74,9 +77,11 @@
 			<Icon icon="lucide:x" class="h-4 w-4" />
 		</button>
 
+		<!-- 2. Scrollable Content (Links) -->
 		<div class="flex-1 overflow-y-auto">
 			{#if !auth.isAuthenticated}
-				<div class="space-y-2 border-b border-gray-200 p-3">
+				<!-- GUEST VIEW -->
+				<div class="space-y-2 border-b border-gray-200 p-4">
 					<a
 						href="/login"
 						onclick={onClose}
@@ -93,10 +98,13 @@
 					</a>
 				</div>
 			{:else}
-				<div class="border-b border-gray-200 p-3">
-					<div class="flex items-center gap-2.5">
+				<!-- AUTHENTICATED VIEW -->
+
+				<!-- Profile Snippet -->
+				<div class="border-b border-gray-200 p-4">
+					<div class="flex items-center gap-3">
 						<div
-							class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-semibold text-green-700"
+							class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-semibold text-green-700"
 						>
 							{auth.user?.email?.[0]?.toUpperCase() || 'U'}
 						</div>
@@ -111,25 +119,27 @@
 					</div>
 				</div>
 
+				<!-- Main Nav Links -->
 				<div class="space-y-0.5 p-3">
-					<div class="mb-2 px-2.5 text-xs font-semibold text-gray-500">ACCOUNT</div>
-
+					<div class="mb-2 px-2.5 text-xs font-semibold text-gray-500 tracking-wider">ACCOUNT</div>
 					{@render navLink('lucide:package', 'Orders', '/orders')}
-
-					{@render navLink('lucide:bookmark', 'Saved Addresses', '/address')}
-
-					{@render navLink('lucide:settings', 'Account Settings', 'settings')}
+					{@render navLink('lucide:bookmark', 'Saved Addresses', '/addresses')}
+					{@render navLink('lucide:settings', 'Account Settings', '/settings')}
 				</div>
+			{/if}
+		</div>
 
-				<div class="border-t border-gray-200 p-3">
-					<button
-						onclick={handleLogout}
-						class="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-red-600 transition hover:bg-red-50"
-					>
-						<Icon icon="lucide:log-out" class="h-4 w-4" />
-						<span>Sign Out</span>
-					</button>
-				</div>
+		<!-- 3. Fixed Footer (Theme & Logout) -->
+		<div class="border-t border-gray-200 bg-gray-50/50 p-4">
+			<!-- Logout Button (Only if logged in) -->
+			{#if auth.isAuthenticated}
+				<button
+					onclick={handleLogout}
+					class="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 hover:border-red-100 hover:shadow-sm"
+				>
+					<Icon icon="lucide:log-out" class="h-4 w-4" />
+					Sign Out
+				</button>
 			{/if}
 		</div>
 	</div>

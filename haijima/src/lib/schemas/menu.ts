@@ -35,22 +35,43 @@ export interface MenuItem {
 export interface CartItem {
 	cartItemId: string; // Unique composite key (productId + variantId)
 	productId: string;
-	variantId?: string; // Optional (some items have no variants)
+	variantId?: string;
 	name: string;
 	price: number; // Unit price
 	image: ImageVariants | null;
 	quantity: number;
-	// Helper for UI display (optional but useful)
 	variantName?: string;
 }
 
-// For reordering, we just define the input shape we expect from the Order History API
-export interface OrderHistoryItem {
+export interface OrderHistoryProduct {
+	id: string;
 	product_id: string;
-	variant_id?: string | null;
+	variant_id: string | null;
 	product_name: string;
 	quantity: number;
-	price: number; // This is usually TOTAL price in order history tables
+	price: number;
 	image_url: ImageVariants | null;
-	variant_size?: string | null;
+	variant_size: string | null;
+}
+
+export interface OrderHistoryItem {
+	id: string;
+	delivery_type: 'pickup' | 'delivery';
+
+	// Address Details
+	delivery_address_main_text: string | null;
+	delivery_address_secondary_text: string | null;
+	delivery_instructions: string | null;
+
+	status: string;
+	payment_status: string;
+	payment_reference: string | null;
+	mpesa_phone: string | null;
+
+	subtotal: number;
+	delivery_fee: number;
+	total_amount: number;
+
+	created_at: string;
+	items: OrderHistoryProduct[];
 }

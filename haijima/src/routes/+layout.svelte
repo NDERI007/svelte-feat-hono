@@ -1,26 +1,32 @@
 <script lang="ts">
-	import { setAuthState } from '$lib/stores/auth.svelte';
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
+	import { fade } from 'svelte/transition';
+	import { Toaster } from 'svelte-sonner';
+
+	import { page, navigating } from '$app/state';
+
 	import type { LayoutData } from './$types';
-	import { page } from '$app/state';
-	import { navigating } from '$app/stores';
+	import { setAuthState } from '$lib/stores/auth.svelte';
+
+	import Header from '$lib/components/header.svelte';
 	import Footer from './_components/footer.svelte';
 	import './layout.css';
-	import { Toaster } from 'svelte-sonner';
-	import Header from '$lib/components/header.svelte';
-	import { fade } from 'svelte/transition';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
-	// Initialize auth state
-	const auth = setAuthState(data.user);
+	// --- Auth State ---
+	// 1. Initialize with current data (Runes allow this)
+	const auth = setAuthState(untrack(() => data.user));
 
-	// Sync on data changes
+	// 2. Sync whenever data changes (Fixes the "initial value" warning logic)
 	$effect(() => {
 		auth.setUser(data.user);
 	});
+
+	// --- Navigation Logic ---
 	const hiddenPaths = ['/', '/login', '/signup'];
 
+	// ✅ FIX 2: Use page.url directly (no $page)
 	let shouldHideNavbar = $derived(
 		page.url.pathname.startsWith('/dashboard') || hiddenPaths.includes(page.url.pathname)
 	);
@@ -32,7 +38,7 @@
 	<Header />
 {/if}
 
-{#if $navigating}
+{#if navigating.to}
 	<div
 		class="fixed top-0 left-0 right-0 z-[100] h-1 bg-green-100"
 		transition:fade={{ duration: 100 }}
@@ -50,7 +56,6 @@
 </div>
 
 <style>
-	/* Simple infinite animation */
 	@keyframes loading {
 		0% {
 			transform: translateX(-100%);

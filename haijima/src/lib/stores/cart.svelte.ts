@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import type { CartItem, MenuItem, ProductVariant, OrderHistoryItem } from '$lib/schemas/menu';
+import type { CartItem, MenuItem, ProductVariant, OrderHistoryProduct } from '$lib/schemas/menu';
 
 class CartStore {
 	// --- State (Runes) ---
@@ -139,7 +139,7 @@ class CartStore {
 	 * Converts "Order History" items back into "Cart Items"
 	 * Logic: Calculates unit price from total price if needed.
 	 */
-	reorderItems(historyItems: OrderHistoryItem[]) {
+	reorderItems(historyItems: OrderHistoryProduct[]) {
 		// 1. Clear current cart
 		this.items = [];
 

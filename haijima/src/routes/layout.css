@@ -1,29 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
-@import '@fontsource/fira-mono';
-@import '@fontsource/inter';
 @plugin '@tailwindcss/typography';
 
 :root {
-	--font-body:
-		'Inter', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-		Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+	/* --- Typography --- */
+	--font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	--font-mono: 'Fira Mono', monospace;
+	--font-numbers: 'JetBrains Mono', monospace;
+	/* --- Warm Earth Tones Palette (Mocha Mousse & Terracotta) --- */
 
-	/* Theme Colors */
-	--color-bg-0: #ffffff;
-	--color-bg-1: #fefaef;
-	--color-bg-2: #f0eee2;
-	--color-theme-1: #14532d;
-	--color-theme-2: #166534;
-	--color-text: #052e16;
+	/* Backgrounds - Warm Neutrals */
+	--color-bg-0: #ffffff; /* Pure White (Cards, Primary Surfaces) */
+	--color-bg-1: #faf8f5; /* Warm Cream (Main Background) */
+	--color-bg-2: #f5f1ed; /* Soft Beige (Subtle Sections) */
 
-	--column-width: 42rem;
-	--column-margin-top: 4rem;
+	/* Brand Colors - Earthy & Warm */
+	--color-theme-1: #d4745f; /* Warm Terracotta - Primary Actions */
+	--color-theme-2: #b85a45; /* Deeper Terracotta - Hover States */
+	--color-theme-light: #f9e5e0; /* Soft Peachy Pink - Subtle Highlights */
 
+	/* Secondary Accent - Mocha */
+	--color-accent-1: #a47864; /* Mocha Brown - Secondary Elements */
+	--color-accent-2: #8b6552; /* Rich Brown - Depth & Contrast */
+
+	/* Text Colors - Rich & Warm */
+	--color-text: #3a2a1f; /* Deep Warm Brown - Primary Text */
+	--color-text-muted: #6b5d52; /* Muted Taupe - Secondary Text */
+	--color-text-lighter: #9b8b7e; /* Light Taupe - Tertiary Text */
+
+	--color-text-black: #000000;
+	--color-text-dark: #1a1410;
+	--color-text-charcoal: #2d2520;
+	/* Borders & Dividers */
+	--color-border: #e8ddd5; /* Warm Beige - Soft Borders */
+	--color-border-light: #f2eae3; /* Lighter Beige - Subtle Dividers */
+
+	/* Status Colors */
+	--color-success: #7c9a6b;
+	--color-success-bg: #f0f5ed;
+	--color-warning: #e8a549;
+	--color-warning-bg: #fdf6ec;
+
+	/* --- Global Defaults --- */
 	font-family: var(--font-body);
 	color: var(--color-text);
 
-	/* Font rendering improvements */
+	/* Rendering Optimization */
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	text-rendering: optimizeLegibility;
@@ -32,108 +55,267 @@
 body {
 	min-height: 100vh;
 	margin: 0;
-	background-attachment: fixed;
+
+	/* Warm, inviting background */
 	background-color: var(--color-bg-1);
-	background-size: 100vw 100vh;
-	background-image:
-		radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 100%),
-		linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 100%);
+
+	/* Subtle warm gradient for depth */
+	background-image: linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 100%);
+	background-attachment: fixed;
+
+	transition:
+		background-color 0.2s,
+		color 0.2s;
 }
+
+/* --- Typography Overrides --- */
 
 h1,
 h2,
-p {
-	font-weight: 400;
-}
-
-h1 {
-	font-size: 2rem;
-	text-align: center;
-	color: var(--color-theme-1);
-	font-weight: 600; /* Slightly bolder for headings */
-}
-
-h2 {
-	font-size: 1rem;
-	color: var(--color-theme-1);
+h4,
+h5,
+h6 {
 	font-weight: 600;
-}
-
-h3 {
-	font-weight: 600; /* Semibold for product names */
-	letter-spacing: -0.01em; /* Slight tightening for better appearance */
-}
-
-p {
-	line-height: 1.5;
-}
-a {
-	color: var(--color-theme-1); /* Links now use Green-900 */
-	text-decoration: none;
-	font-weight: 500;
-	transition: color 0.2s;
-}
-
-a:hover {
-	color: var(--color-theme-2); /* Lighter green on hover */
-	text-decoration: underline;
-}
-
-h1 {
-	font-size: 2rem;
-	text-align: center;
-	color: var(--color-theme-1); /* Headings in Green-900 */
-}
-
-h2 {
-	font-size: 1rem;
-	color: var(--color-theme-1);
-}
-
-pre {
-	font-size: 16px;
-	font-family: var(--font-mono);
-	/* Changed background to be slightly translucent white to blend with beige */
-	background-color: rgba(255, 255, 255, 0.7);
-	border: 1px solid rgba(20, 83, 45, 0.1); /* Subtle green border */
-	border-radius: 3px;
-	box-shadow: 2px 2px 6px rgba(20, 83, 45, 0.05);
-	padding: 0.5em;
-	overflow-x: auto;
+	letter-spacing: -0.02em;
 	color: var(--color-text);
 }
 
-.text-column {
-	display: flex;
-	max-width: 48rem;
-	flex: 0.6;
-	flex-direction: column;
-	justify-content: center;
-	margin: 0 auto;
+h1 {
+	font-size: 2rem;
+	text-align: center;
 }
 
+h2 {
+	font-size: 1.5rem;
+}
+
+h3 {
+	font-size: 1rem;
+	font-weight: 500;
+}
+
+p {
+	line-height: 1.6;
+	color: var(--color-text-muted);
+}
+
+/* --- Links & Interactions --- */
+
+a {
+	text-decoration: none;
+	font-weight: 500;
+	transition: all 0.2s ease;
+	color: var(--color-text);
+}
+
+a:hover {
+	color: var(--color-theme-1);
+}
+
+.product-name {
+	font-family: var(--font-body);
+	font-size: 1rem; /* 16px - adjust as needed */
+	font-weight: 600;
+	color: var(--color-text-black);
+	line-height: 1.4;
+}
+
+/* For larger product names, you can also create a variant */
+.product-name-lg {
+	font-family: var(--font-body);
+	font-size: 1.125rem; /* 18px */
+	font-weight: 600;
+	color: var(--color-text-dark);
+	line-height: 1.4;
+}
+
+.price-text {
+	font-family: var(--font-numbers);
+	font-weight: 400;
+	color: var(--color-text-dark);
+	letter-spacing: -0.01em;
+}
+
+/* Buttons - Warm terracotta for calls-to-action */
+.btn-primary {
+	background-color: var(--color-theme-1);
+	color: white;
+	padding: 0.75rem 1.5rem;
+	border-radius: 0.5rem;
+	font-weight: 600;
+	transition: all 0.2s ease;
+	border: none;
+	cursor: pointer;
+	box-shadow: 0 1px 3px rgba(212, 116, 95, 0.12);
+}
+
+.btn-primary:hover {
+	background-color: var(--color-theme-2);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(212, 116, 95, 0.25);
+}
+
+.btn-secondary {
+	background-color: white;
+	color: var(--color-text);
+	padding: 0.75rem 1.5rem;
+	border-radius: 0.5rem;
+	font-weight: 600;
+	transition: all 0.2s ease;
+	border: 1px solid var(--color-border);
+	cursor: pointer;
+}
+
+.btn-secondary:hover {
+	border-color: var(--color-theme-1);
+	color: var(--color-theme-1);
+	background-color: var(--color-theme-light);
+}
+
+/* Mocha accent button */
+.btn-accent {
+	background-color: var(--color-accent-1);
+	color: white;
+	padding: 0.75rem 1.5rem;
+	border-radius: 0.5rem;
+	font-weight: 600;
+	transition: all 0.2s ease;
+	border: none;
+	cursor: pointer;
+}
+
+.btn-accent:hover {
+	background-color: var(--color-accent-2);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(164, 120, 100, 0.25);
+}
+
+/* Custom Selection */
+::selection {
+	background-color: var(--color-theme-light);
+	color: var(--color-theme-2);
+}
+
+/* --- Card Styles --- */
+.card {
+	background-color: var(--color-bg-0);
+	border: 1px solid var(--color-border);
+	border-radius: 1rem;
+	padding: 1.5rem;
+	transition: all 0.3s ease;
+}
+
+.card:hover {
+	box-shadow: 0 8px 24px rgba(58, 42, 31, 0.08);
+	border-color: var(--color-border-light);
+}
+
+/* --- Badges & Accents --- */
+.badge-primary {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.25rem 0.75rem;
+	background-color: var(--color-theme-light);
+	color: var(--color-theme-2);
+	border-radius: 9999px;
+	font-size: 0.875rem;
+	font-weight: 600;
+}
+
+.badge-accent {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.25rem 0.75rem;
+	background-color: #f0e6dd;
+	color: var(--color-accent-2);
+	border-radius: 9999px;
+	font-size: 0.875rem;
+	font-weight: 600;
+}
+
+.badge-success {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.25rem 0.75rem;
+	background-color: var(--color-success-bg);
+	color: var(--color-success);
+	border-radius: 9999px;
+	font-size: 0.875rem;
+	font-weight: 600;
+}
+
+/* --- Utilities --- */
+
 input,
-button {
-	font-size: inherit;
+button,
+textarea,
+select {
 	font-family: inherit;
+	font-size: inherit;
 }
 
 button:focus:not(:focus-visible) {
 	outline: none;
 }
 
-/* Custom Selection Color (Highlighting text) */
-::selection {
-	background-color: var(--color-theme-1);
-	color: var(--color-bg-1);
+/* Form Inputs */
+input[type='text'],
+input[type='email'],
+input[type='search'],
+input[type='tel'],
+input[type='number'],
+textarea,
+select {
+	width: 100%;
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--color-border);
+	border-radius: 0.5rem;
+	background-color: white;
+	color: var(--color-text);
+	transition: all 0.2s ease;
 }
 
-@media (min-width: 720px) {
-	h1 {
-		font-size: 2.4rem;
-	}
+input:focus,
+textarea:focus,
+select:focus {
+	outline: none;
+	border-color: var(--color-theme-1);
+	box-shadow: 0 0 0 3px var(--color-theme-light);
 }
 
+input::placeholder,
+textarea::placeholder {
+	color: var(--color-text-lighter);
+}
+
+/* Code Blocks */
+pre {
+	font-size: 14px;
+	font-family: var(--font-mono);
+	background-color: var(--color-bg-2);
+	border: 1px solid var(--color-border);
+	border-radius: 0.5rem;
+	padding: 1rem;
+	overflow-x: auto;
+	color: var(--color-text);
+}
+
+code {
+	font-family: var(--font-mono);
+	background-color: var(--color-bg-2);
+	padding: 0.125rem 0.375rem;
+	border-radius: 0.25rem;
+	font-size: 0.875em;
+}
+
+/* Dividers */
+hr {
+	border: none;
+	border-top: 1px solid var(--color-border-light);
+	margin: 2rem 0;
+}
+
+/* Accessibility Utility */
 .visually-hidden {
 	border: 0;
 	clip: rect(0 0 0 0);
@@ -144,4 +326,11 @@ button:focus:not(:focus-visible) {
 	position: absolute;
 	width: 1px;
 	white-space: nowrap;
+}
+
+/* Desktop sizing for H1 */
+@media (min-width: 720px) {
+	h1 {
+		font-size: 2.5rem;
+	}
 }
