@@ -11,6 +11,8 @@
 	import Header from '$lib/components/header.svelte';
 	import Footer from './_components/footer.svelte';
 	import './layout.css';
+	import { cartStore } from '$lib/stores/cart.svelte';
+	import { deliveryStore } from '$lib/stores/delivery.svelte';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
@@ -21,6 +23,18 @@
 	// 2. Sync whenever data changes (Fixes the "initial value" warning logic)
 	$effect(() => {
 		auth.setUser(data.user);
+	});
+
+	$effect(() => {
+		if (data.user?.email) {
+			// User is logged in - use their email
+			cartStore.setUserEmail(data.user.email);
+			deliveryStore.setUserEmail(data.user.email);
+		} else {
+			// User is logged out - switch to guest mode
+			cartStore.setUserEmail('guest');
+			deliveryStore.setUserEmail('guest');
+		}
 	});
 
 	// --- Navigation Logic ---

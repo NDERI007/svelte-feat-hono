@@ -108,10 +108,6 @@ a {
 	color: var(--color-text);
 }
 
-a:hover {
-	color: var(--color-theme-1);
-}
-
 .product-name {
 	font-family: var(--font-body);
 	font-size: 1rem; /* 16px - adjust as needed */
@@ -242,6 +238,213 @@ a:hover {
 	border-radius: 9999px;
 	font-size: 0.875rem;
 	font-weight: 600;
+}
+
+/* --- Cart Drawer Styles --- */
+.cart-drawer {
+	background-color: var(--color-bg-0);
+}
+
+.cart-header {
+	border-color: var(--color-border);
+}
+
+.cart-close-btn {
+	color: var(--color-text-muted);
+}
+
+.cart-close-btn:hover {
+	background-color: var(--color-theme-light);
+	color: var(--color-theme-1);
+}
+
+.cart-delivery-prompt {
+	background-color: var(--color-theme-light);
+	border-color: var(--color-theme-1);
+}
+
+.cart-progress-bg {
+	background-color: var(--color-border-light);
+}
+
+.cart-progress-bar {
+	background-color: var(--color-theme-1);
+}
+
+.cart-item-card {
+	border: 1px solid var(--color-border-light);
+}
+
+.cart-item-card:hover {
+	box-shadow: 0 4px 12px rgba(58, 42, 31, 0.08);
+	border-color: var(--color-theme-light);
+}
+
+.cart-item-image {
+	border: 1px solid var(--color-border-light);
+}
+
+.cart-delete-btn {
+	color: var(--color-theme-2);
+}
+
+.cart-delete-btn:hover {
+	color: var(--color-theme-1);
+	transform: scale(1.1);
+}
+
+.cart-quantity-footer {
+	background-color: var(--color-bg-2);
+	border-color: var(--color-border-light);
+}
+
+.cart-quantity-btn {
+	border: 1px solid var(--color-border);
+}
+
+.cart-quantity-btn:hover {
+	background-color: var(--color-theme-light);
+	border-color: var(--color-theme-1);
+}
+
+.cart-footer {
+	border-color: var(--color-border);
+}
+
+.cart-success-badge {
+	background-color: var(--color-success-bg);
+	border-color: var(--color-success);
+	color: var(--color-success);
+}
+
+.cart-totals {
+	background-color: var(--color-bg-2);
+}
+
+.cart-total-divider {
+	border-color: var(--color-border);
+}
+
+.cart-clear-btn {
+	color: var(--color-theme-2);
+}
+
+.cart-clear-btn:hover {
+	color: var(--color-theme-1);
+}
+
+* --- Category Filter Styles --- */ .filter-arrow {
+	border: 1px solid var(--color-border);
+	color: var(--color-text-muted);
+}
+
+.filter-arrow:hover {
+	background-color: var(--color-theme-light);
+	border-color: var(--color-theme-1);
+	color: var(--color-theme-1);
+}
+
+.filter-category-btn {
+	border: 1px solid var(--color-border);
+}
+
+.filter-category-active {
+	background-color: var(--color-theme-1);
+	color: white;
+	box-shadow: 0 4px 12px rgba(212, 116, 95, 0.25);
+	border-color: var(--color-theme-1);
+}
+
+.filter-category-active:hover {
+	background-color: var(--color-theme-2);
+}
+
+.filter-category-inactive {
+	background-color: var(--color-bg-0);
+	color: var(--color-text);
+	border-color: var(--color-border-light);
+}
+
+.filter-category-inactive:hover {
+	background-color: var(--color-theme-light);
+	border-color: var(--color-theme-1);
+	color: var(--color-theme-2);
+}
+
+.filter-category-inactive:active {
+	background-color: var(--color-bg-2);
+}
+
+.filter-category-icon {
+	transition: transform 0.2s ease;
+}
+
+.filter-category-active .filter-category-icon {
+	filter: brightness(0) invert(1); /* Makes icons white when active */
+}
+
+.filter-category-name {
+	font-weight: 500;
+	letter-spacing: -0.01em;
+}
+
+/* --- Navbar Styles --- */
+.navbar-header {
+	background-color: var(--color-bg-0);
+	border-bottom: 1px solid var(--color-border-light);
+	box-shadow: 0 1px 3px rgba(58, 42, 31, 0.05);
+}
+
+.navbar-icon-btn {
+	color: var(--color-text);
+}
+
+.navbar-icon-btn:hover {
+	background-color: var(--color-theme-light);
+	color: var(--color-theme-1);
+}
+
+.navbar-icon-btn:active {
+	background-color: var(--color-bg-2);
+}
+
+.navbar-logo {
+	color: var(--color-text);
+	text-decoration: none;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	transition: color 0.2s ease;
+}
+
+.navbar-avatar {
+	background-color: var(--color-text-charcoal);
+	color: var(--color-bg-1);
+}
+
+.navbar-login-btn {
+	color: var(--color-text);
+}
+
+.navbar-login-btn:hover {
+	background-color: var(--color-theme-light);
+	color: var(--color-theme-1);
+}
+
+.navbar-signup-btn {
+	box-shadow: 0 1px 3px rgba(212, 116, 95, 0.12);
+}
+
+.navbar-cart-btn {
+	color: var(--color-text);
+}
+
+.navbar-cart-btn:active {
+	background-color: var(--color-bg-2);
+}
+
+.navbar-cart-badge {
+	background-color: var(--color-theme-1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* --- Utilities --- */

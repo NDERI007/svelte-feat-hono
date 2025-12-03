@@ -1,5 +1,6 @@
 import { getContext, setContext } from 'svelte';
 import { goto } from '$app/navigation';
+
 type User = {
 	email: string;
 	role: string;
@@ -26,22 +27,7 @@ class AuthState {
 	}
 
 	async logout() {
-		try {
-			await fetch('/api/auth/logout');
-			this.user = null;
-
-			await goto('/login', {
-				// 1. Force server data to refresh (clears the old user from +layout.server.ts)
-				invalidateAll: true,
-
-				// 2. Replace History (Crucial for Logout)
-				// This prevents the user from clicking the browser's "Back" button
-				// and seeing the protected dashboard again.
-				replaceState: true
-			});
-		} catch (err) {
-			console.error('Logout failed:', err);
-		}
+		await goto('/logout');
 	}
 }
 

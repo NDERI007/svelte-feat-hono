@@ -5,14 +5,14 @@ class CartStore {
 	// --- State (Runes) ---
 	items = $state<CartItem[]>([]);
 	isOpen = $state(false);
-	userId = $state<string>('guest');
+	userEmail = $state<string>('guest');
 
 	constructor() {
 		if (browser) {
-			// 1. Recover User ID
-			const storedUserId = localStorage.getItem('cart-user-id');
-			if (storedUserId) {
-				this.userId = storedUserId;
+			// 1. Recover User Email
+			const storedUserEmail = localStorage.getItem('cart-user-email');
+			if (storedUserEmail) {
+				this.userEmail = storedUserEmail;
 			}
 			// 2. Load Cart Data
 			this.loadFromStorage();
@@ -22,7 +22,7 @@ class CartStore {
 	// --- Persistence ---
 
 	private getStorageKey() {
-		return `cart-storage-${this.userId || 'guest'}`;
+		return `cart-storage-${this.userEmail || 'guest'}`;
 	}
 
 	private loadFromStorage() {
@@ -33,7 +33,6 @@ class CartStore {
 		if (stored) {
 			try {
 				const parsed = JSON.parse(stored);
-				// Zustand wraps in { state: ... }, we flatten it here
 				this.items = parsed.items || parsed.state?.items || [];
 			} catch (e) {
 				console.error('Cart load error:', e);
@@ -47,17 +46,17 @@ class CartStore {
 	private saveToStorage() {
 		if (!browser) return;
 		const key = this.getStorageKey();
-		const data = { items: this.items }; // We only persist items, not isOpen
+		const data = { items: this.items };
 		localStorage.setItem(key, JSON.stringify(data));
 	}
 
 	// --- Actions ---
 
-	setUserId(newUserId: string | null) {
-		const userId = newUserId || 'guest';
-		if (this.userId !== userId) {
-			this.userId = userId;
-			if (browser) localStorage.setItem('cart-user-id', userId);
+	setUserEmail(newUserEmail: string | null) {
+		const userEmail = newUserEmail || 'guest';
+		if (this.userEmail !== userEmail) {
+			this.userEmail = userEmail;
+			if (browser) localStorage.setItem('cart-user-email', userEmail);
 
 			// Switch "profiles" (Guest Cart vs User Cart)
 			this.loadFromStorage();
@@ -76,24 +75,14 @@ class CartStore {
 		this.isOpen = false;
 	}
 
-	/**
-	 * Adds an item to the cart.
-	 * Handles merging duplicates (same product + same variant).
-	 */
 	addItem(product: MenuItem, quantity = 1, selectedVariant?: ProductVariant) {
 		const isVariant = !!selectedVariant;
-
-		// Generate Unique ID: "prod_123" OR "prod_123-var_456"
 		const cartItemId = isVariant ? `${product.id}-${selectedVariant.id}` : product.id;
-
-		// Check for existing
 		const existingIndex = this.items.findIndex((i) => i.cartItemId === cartItemId);
 
 		if (existingIndex > -1) {
-			// Update Existing
 			this.items[existingIndex].quantity += quantity;
 		} else {
-			// Create New
 			const newItem: CartItem = {
 				cartItemId,
 				productId: product.id,
@@ -107,7 +96,6 @@ class CartStore {
 			this.items.push(newItem);
 		}
 
-		// Open cart to show user success (Optional UX choice)
 		this.openCart();
 		this.saveToStorage();
 	}
@@ -135,23 +123,13 @@ class CartStore {
 		this.saveToStorage();
 	}
 
-	/**
-	 * Converts "Order History" items back into "Cart Items"
-	 * Logic: Calculates unit price from total price if needed.
-	 */
 	reorderItems(historyItems: OrderHistoryProduct[]) {
-		// 1. Clear current cart
 		this.items = [];
 
-		// 2. Map items
 		const newItems: CartItem[] = historyItems.map((h) => {
 			const isVariant = !!h.variant_id;
 			const cartItemId = isVariant ? `${h.product_id}-${h.variant_id}` : h.product_id;
-
-			// Handle price: History usually stores "Total line price"
-			// We need "Unit price" for the cart logic.
 			const unitPrice = h.quantity > 0 ? h.price / h.quantity : h.price;
-
 			const displayName =
 				isVariant && h.variant_size ? `${h.product_name} (${h.variant_size})` : h.product_name;
 
@@ -172,7 +150,27 @@ class CartStore {
 		this.openCart();
 	}
 
-	// --- Computed (Getters act as Derived state) ---
+	reset() {
+		this.items = [];
+		this.isOpen = false;
+
+		if (browser) {
+			// Get the current storage key before resetting
+			const currentKey = this.getStorageKey();
+
+			// Clear current user's cart
+			localStorage.removeItem(currentKey);
+			localStorage.removeItem('cart-user-email');
+
+			// Also clear the guest cart
+			localStorage.removeItem('cart-storage-guest');
+		}
+
+		// Reset to guest AFTER clearing storage
+		this.userEmail = 'guest';
+	}
+
+	// --- Computed ---
 
 	get totalItems() {
 		return this.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -183,5 +181,4 @@ class CartStore {
 	}
 }
 
-// Export Singleton
 export const cartStore = new CartStore();

@@ -1,5 +1,7 @@
 import type { LayoutServerLoad } from './$types';
 
+export const csr = true;
+export const ssr = true;
 export const load: LayoutServerLoad = async ({ locals }) => {
 	// User is already validated in hooks.server.ts
 	// No additional request needed!

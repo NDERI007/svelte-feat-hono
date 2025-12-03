@@ -50,10 +50,10 @@
 	{#if canScrollLeft}
 		<button
 			onclick={() => scroll('left')}
-			class="absolute top-1/2 left-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg transition hover:bg-gray-50 md:flex"
+			class="absolute top-1/2 left-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg transition md:flex filter-arrow"
 			aria-label="Scroll left"
 		>
-			<Icon icon="lucide:chevron-left" class="h-5 w-5 text-gray-700" />
+			<Icon icon="lucide:chevron-left" class="h-5 w-5" />
 		</button>
 	{/if}
 
@@ -72,10 +72,8 @@
 
 			<button
 				onclick={() => onSelect(cat.id)}
-				class="flex shrink-0 flex-col items-center gap-2 rounded-xl px-3 py-3 transition sm:min-w-[90px] sm:px-4 sm:py-3
-                {isActive
-					? 'bg-green-600 text-white shadow-md'
-					: 'bg-[#f5f0e1] text-gray-800 hover:bg-gray-100 active:bg-gray-200'}"
+				class="flex shrink-0 flex-col items-center gap-2 rounded-xl px-3 py-3 transition sm:min-w-[90px] sm:px-4 sm:py-3 filter-category-btn
+                {isActive ? 'filter-category-active' : 'filter-category-inactive'}"
 			>
 				<!-- Icon -->
 				{#if cat.icon_url}
@@ -83,14 +81,14 @@
 						<img
 							src={cat.icon_url}
 							alt={cat.name}
-							class="h-8 w-8 object-contain md:h-12 md:w-12"
+							class="h-8 w-8 object-contain md:h-12 md:w-12 filter-category-icon"
 							loading="lazy"
 						/>
 					</div>
 				{/if}
 
 				<!-- Name -->
-				<span class="text-sm font-normal sm:text-sm md:text-sm">
+				<span class="text-sm font-normal sm:text-sm md:text-sm filter-category-name">
 					{cat.name}
 				</span>
 			</button>
@@ -101,10 +99,10 @@
 	{#if canScrollRight}
 		<button
 			onclick={() => scroll('right')}
-			class="absolute top-1/2 right-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg transition hover:bg-gray-50 md:flex"
+			class="absolute top-1/2 right-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg transition md:flex filter-arrow"
 			aria-label="Scroll right"
 		>
-			<Icon icon="lucide:chevron-right" class="h-5 w-5 text-gray-700" />
+			<Icon icon="lucide:chevron-right" class="h-5 w-5" />
 		</button>
 	{/if}
 </div>

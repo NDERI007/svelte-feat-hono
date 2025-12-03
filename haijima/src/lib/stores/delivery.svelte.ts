@@ -1,7 +1,6 @@
 import { browser } from '$app/environment';
 import type { DeliveryLocation } from '$lib/schemas/address';
 
-// Constants
 export const DELIVERY_FEE = 10;
 export const FREE_DELIVERY_THRESHOLD = 150;
 
@@ -9,25 +8,19 @@ type DeliveryOption = 'delivery' | 'pickup';
 
 class DeliveryStore {
 	// --- State (Runes) ---
-	userId = $state<string>('guest');
+	userEmail = $state<string>('guest');
 	place = $state<DeliveryLocation | null>(null);
 	deliveryOption = $state<DeliveryOption>('delivery');
-
-	// Example of a field that might change frequently (typing instructions)
 	instructions = $state<string>('');
 
-	// Internal timer for the debounce logic
 	private saveTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	constructor() {
 		if (browser) {
-			// 1. Recover the last used User ID
-			const storedUserId = localStorage.getItem('delivery-user-id');
-			if (storedUserId) {
-				this.userId = storedUserId;
+			const storedUserEmail = localStorage.getItem('delivery-user-email');
+			if (storedUserEmail) {
+				this.userEmail = storedUserEmail;
 			}
-
-			// 2. Load data for that specific user
 			this.loadFromStorage();
 		}
 	}
@@ -35,7 +28,7 @@ class DeliveryStore {
 	// --- Persistence Logic ---
 
 	private getStorageKey() {
-		return `delivery-storage-${this.userId || 'guest'}`;
+		return `delivery-storage-${this.userEmail || 'guest'}`;
 	}
 
 	private loadFromStorage() {
@@ -52,29 +45,21 @@ class DeliveryStore {
 				this.instructions = parsed.instructions ?? '';
 			} catch (e) {
 				console.error('Failed to parse delivery storage', e);
-				// Fallback defaults
 				this.place = null;
 				this.deliveryOption = 'delivery';
 			}
 		} else {
-			// No data for this user? Reset to defaults.
 			this.place = null;
 			this.deliveryOption = 'delivery';
 			this.instructions = '';
 		}
 	}
 
-	/**
-	 * Saves to LocalStorage with a 500ms delay.
-	 * This prevents writing to disk on every single keystroke.
-	 */
 	private saveToStorage() {
 		if (!browser) return;
 
-		// 1. Cancel previous pending save
 		clearTimeout(this.saveTimeout);
 
-		// 2. Schedule new save
 		this.saveTimeout = setTimeout(() => {
 			const key = this.getStorageKey();
 			const data = {
@@ -89,19 +74,15 @@ class DeliveryStore {
 
 	// --- Actions ---
 
-	setUserId(newUserId: string | null) {
-		const userId = newUserId || 'guest';
+	setUserEmail(newUserEmail: string | null) {
+		const userEmail = newUserEmail || 'guest';
 
-		// Only act if the ID actually changed
-		if (this.userId !== userId) {
-			// Important: Cancel any pending save from the OLD user
-			// so we don't overwrite the new user's data with old data.
+		if (this.userEmail !== userEmail) {
 			clearTimeout(this.saveTimeout);
 
-			this.userId = userId;
-			if (browser) localStorage.setItem('delivery-user-id', userId);
+			this.userEmail = userEmail;
+			if (browser) localStorage.setItem('delivery-user-email', userEmail);
 
-			// Now load the fresh state for the NEW user
 			this.loadFromStorage();
 		}
 	}
@@ -123,7 +104,7 @@ class DeliveryStore {
 
 	setInstructions(text: string) {
 		this.instructions = text;
-		this.saveToStorage(); // Safe to call on every keystroke
+		this.saveToStorage();
 	}
 
 	clearDelivery() {
@@ -133,15 +114,35 @@ class DeliveryStore {
 		this.saveToStorage();
 	}
 
+	reset() {
+		clearTimeout(this.saveTimeout);
+
+		if (browser) {
+			// Get the current storage key before resetting
+			const currentKey = this.getStorageKey();
+
+			// Clear current user's delivery
+			localStorage.removeItem(currentKey);
+			localStorage.removeItem('delivery-user-email');
+
+			// Also clear the guest delivery
+			localStorage.removeItem('delivery-storage-guest');
+		}
+
+		// Reset state AFTER clearing storage
+		this.place = null;
+		this.deliveryOption = 'delivery';
+		this.instructions = '';
+		this.userEmail = 'guest';
+	}
+
 	// --- Calculations ---
 
 	getDeliveryFee(subtotal: number) {
-		// Pickup is always free
 		if (this.deliveryOption !== 'delivery') {
 			return 0;
 		}
 
-		// Free delivery threshold
 		if (subtotal >= FREE_DELIVERY_THRESHOLD) {
 			return 0;
 		}
@@ -150,5 +151,4 @@ class DeliveryStore {
 	}
 }
 
-// Export Singleton
 export const deliveryStore = new DeliveryStore();
