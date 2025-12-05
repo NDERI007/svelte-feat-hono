@@ -5,4 +5,4 @@
 	let { form }: PageProps = $props();
 </script>
 
-<AuthForm mode="login" formData={form} />
+<AuthForm mode="signup" formData={form} />

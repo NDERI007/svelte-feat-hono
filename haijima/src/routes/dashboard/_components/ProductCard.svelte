@@ -273,7 +273,7 @@
 								{/each}
 							</div>
 							<p class="text-sm" style="color: var(--color-text);">
-								Price: <span class="font-bold" style="color: var(--color-theme-1);"
+								Price: <span class="font-bold" style="color: var(--color-text);"
 									>KES {currentPrice.toFixed(2)}</span
 								>
 							</p>

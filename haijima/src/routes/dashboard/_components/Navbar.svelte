@@ -67,13 +67,13 @@
 				<div class="hidden items-center gap-2 md:flex">
 					<button
 						onclick={handleLogin}
-						class="rounded-lg px-3 py-1.5 text-sm font-medium transition navbar-login-btn"
+						class="rounded-lg px-3 py-1.5 cursor-pointer text-sm font-medium transition navbar-login-btn"
 					>
 						Login
 					</button>
 					<button
 						onclick={handleSignup}
-						class="rounded-lg px-3 py-1.5 text-sm font-medium text-white transition btn-primary navbar-signup-btn"
+						class="rounded-lg px-3 py-1.5 text-sm font-medium text-white transition btn-primary"
 					>
 						Sign Up
 					</button>
