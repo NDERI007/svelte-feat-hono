@@ -186,7 +186,7 @@
 	>
 		<!-- Backdrop -->
 		<div
-			class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+			class="absolute inset-0 bg-black/40 backdrop-blur-md"
 			transition:fade={{ duration: 200 }}
 			onclick={closeModal}
 			aria-hidden="true"
@@ -194,149 +194,112 @@
 
 		<!-- Modal Content -->
 		<div
-			class="relative z-10 flex flex-col w-full max-w-lg max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl"
-			style="background-color: var(--color-bg-0);"
+			class="relative z-10 flex flex-col w-full max-w-lg max-h-[90vh] overflow-hidden modal-container"
 			transition:scale={{ start: 0.95, duration: 200 }}
 		>
 			<!-- Header -->
-			<div
-				class="sticky top-0 z-10 flex items-center justify-between p-4"
-				style="border-bottom: 1px solid var(--color-border); background-color: var(--color-bg-0);"
-			>
-				<h2 class="truncate pr-4" style="color: var(--color-text);">
+			<div class="flex items-center justify-between px-6 py-5 modal-header">
+				<h2 class="product-name-lg truncate pr-4">
 					{product.name}
 				</h2>
-				<button
-					onclick={closeModal}
-					class="rounded-full p-1 transition-colors"
-					style="color: var(--color-text);"
-					onmouseenter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-2)')}
-					onmouseleave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-				>
+				<button onclick={closeModal} class="modal-close-btn" aria-label="Close modal">
 					<Icon icon="lucide:x" class="h-5 w-5" />
 				</button>
 			</div>
 
 			<!-- Scrollable Body -->
-			<div class="flex-1 overflow-y-auto p-4 sm:p-6 prose prose-sm sm:prose max-w-none">
+			<div class="flex-1 overflow-y-auto px-6 pb-6">
 				{#if isLoadingVariants}
-					<div
-						class="flex flex-col items-center justify-center py-12 gap-2 not-prose"
-						style="color: var(--color-text);"
-					>
+					<div class="flex flex-col items-center justify-center py-16 gap-3">
 						<Icon
 							icon="lucide:loader-2"
-							class="h-8 w-8 animate-spin"
+							class="h-10 w-10 animate-spin"
 							style="color: var(--color-theme-1);"
 						/>
-						<span>Loading options...</span>
+						<span class="text-sm font-medium" style="color: var(--color-text-muted);"
+							>Loading options...</span
+						>
 					</div>
 				{:else}
-					<div class="mb-6 not-prose">
+					<!-- Product Image -->
+					<div class="mb-8">
 						{@render productImage(true)}
 					</div>
 
+					<!-- Size Selection -->
 					{#if !hasDirectPrice && hasVariants}
-						<div class="mb-6 space-y-3 not-prose">
-							<span class="text-sm font-medium" style="color: var(--color-text);">Select Size</span>
-							<div class="flex flex-wrap gap-2">
+						<div class="mb-8">
+							<span class="block text-sm font-semibold mb-3" style="color: var(--color-text);">
+								Size
+							</span>
+							<div class="flex flex-wrap gap-2 mb-6">
 								{#each variants as variant}
 									<button
 										onclick={() => (selectedVariant = variant)}
 										disabled={!variant.is_available}
-										class="relative rounded-lg px-4 py-2 text-sm font-medium transition border
-                                        {selectedVariant?.id === variant.id
-											? 'shadow-md'
-											: variant.is_available
-												? ''
-												: 'cursor-not-allowed line-through'}"
-										style={selectedVariant?.id === variant.id
-											? `background-color: var(--color-theme-1); color: white; border-color: var(--color-theme-1);`
-											: variant.is_available
-												? `background-color: var(--color-bg-0); color: var(--color-text); border-color: var(--color-border);`
-												: `background-color: var(--color-bg-2); color: var(--color-text-lighter); border-color: var(--color-border-light);`}
-										onmouseenter={(e) => {
-											if (variant.is_available && selectedVariant?.id !== variant.id) {
-												e.currentTarget.style.borderColor = 'var(--color-theme-1)';
-												e.currentTarget.style.backgroundColor = 'var(--color-theme-light)';
-											}
-										}}
-										onmouseleave={(e) => {
-											if (variant.is_available && selectedVariant?.id !== variant.id) {
-												e.currentTarget.style.borderColor = 'var(--color-border)';
-												e.currentTarget.style.backgroundColor = 'var(--color-bg-0)';
-											}
-										}}
+										class="modal-size-btn"
+										data-available={variant.is_available}
+										data-selected={selectedVariant?.id === variant.id}
 									>
 										{variant.size_name}
+										{#if !variant.is_available}
+											<span class="modal-unavailable-badge">✕</span>
+										{/if}
 									</button>
 								{/each}
 							</div>
-							<p class="text-sm" style="color: var(--color-text);">
-								Price: <span class="font-bold" style="color: var(--color-text);"
-									>KES {currentPrice.toFixed(2)}</span
+
+							<!-- Price Display -->
+							<div class="flex items-baseline gap-2">
+								<span
+									class="text-xs font-medium uppercase tracking-wide"
+									style="color: var(--color-text-muted);"
 								>
-							</p>
+									Price
+								</span>
+								<span class="text-2xl font-bold price-text" style="color: var(--color-text);">
+									KES {currentPrice.toFixed(2)}
+								</span>
+							</div>
 						</div>
+
+						<!-- Divider -->
+						<div class="modal-divider mb-8"></div>
 					{/if}
 
-					<div
-						class="mb-6 rounded-xl p-4 space-y-4 not-prose"
-						style="background-color: var(--color-bg-1); border: 1px solid var(--color-border);"
-					>
-						<div class="flex items-center justify-between">
-							<span class="font-medium" style="color: var(--color-text);">Quantity</span>
-							<QuantitySelector bind:quantity />
-						</div>
-						<div
-							class="flex items-center justify-between pt-3"
-							style="border-top: 1px solid var(--color-border);"
+					<!-- Quantity -->
+					<div class="mb-8">
+						<QuantitySelector bind:quantity />
+					</div>
+
+					<!-- Divider -->
+					<div class="modal-divider mb-6"></div>
+
+					<!-- Subtotal -->
+					<div class="flex items-baseline justify-between">
+						<span
+							class="text-sm font-semibold uppercase tracking-wide"
+							style="color: var(--color-text-muted);"
 						>
-							<span style="color: var(--color-text);">Subtotal</span>
-							<span class="text-xl font-bold" style="color: var(--color-theme-1);"
-								>KES {subtotal.toFixed(2)}</span
-							>
-						</div>
+							Subtotal
+						</span>
+						<span class="text-3xl font-bold price-text">
+							KES {subtotal.toFixed(2)}
+						</span>
 					</div>
 				{/if}
 			</div>
 
 			<!-- Footer -->
-			<div
-				class="p-4 flex gap-3"
-				style="border-top: 1px solid var(--color-border); background-color: var(--color-bg-0);"
-			>
+			<div class="px-6 pb-6 pt-4 flex gap-3 modal-footer">
 				<button
 					onclick={handleAdd}
 					disabled={isLoadingVariants || (!hasDirectPrice && !selectedVariant)}
-					class="flex-1 rounded-lg py-3 font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-					style="background-color: var(--color-theme-1); color: white;"
-					onmouseenter={(e) =>
-						!e.currentTarget.disabled &&
-						(e.currentTarget.style.backgroundColor = 'var(--color-theme-2)')}
-					onmouseleave={(e) =>
-						!e.currentTarget.disabled &&
-						(e.currentTarget.style.backgroundColor = 'var(--color-theme-1)')}
+					class="flex-1 btn-primary modal-add-btn"
 				>
-					{!hasDirectPrice && !selectedVariant ? 'Select an Option' : 'Add to Cart'}
+					{!hasDirectPrice && !selectedVariant ? 'Select Size First' : 'Add to Cart'}
 				</button>
-				<button
-					onclick={closeModal}
-					class="rounded-lg px-6 font-medium transition-all"
-					style="border: 1px solid var(--color-border); color: var(--color-text); background-color: var(--color-bg-0);"
-					onmouseenter={(e) => {
-						e.currentTarget.style.borderColor = 'var(--color-theme-1)';
-						e.currentTarget.style.color = 'var(--color-theme-1)';
-						e.currentTarget.style.backgroundColor = 'var(--color-theme-light)';
-					}}
-					onmouseleave={(e) => {
-						e.currentTarget.style.borderColor = 'var(--color-border)';
-						e.currentTarget.style.color = 'var(--color-text)';
-						e.currentTarget.style.backgroundColor = 'var(--color-bg-0)';
-					}}
-				>
-					Cancel
-				</button>
+				<button onclick={closeModal} class="modal-cancel-btn"> Cancel </button>
 			</div>
 		</div>
 	</div>

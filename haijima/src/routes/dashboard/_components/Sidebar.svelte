@@ -54,11 +54,6 @@
 			class="flex flex-shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3 md:hidden"
 		>
 			<div class="flex items-center gap-2.5">
-				<div
-					class="flex h-7 w-7 items-center justify-center rounded-lg bg-green-600 text-xs font-bold text-white"
-				>
-					WK
-				</div>
 				<span class="text-base font-semibold text-gray-900"> Weddyskitchen </span>
 			</div>
 			<button
@@ -85,7 +80,7 @@
 					<a
 						href="/login"
 						onclick={onClose}
-						class="block w-full rounded-md bg-green-600 py-2 text-center text-sm font-medium text-white transition hover:bg-green-700"
+						class="block w-full rounded-md bg-black py-2 text-center text-sm font-medium text-white transition"
 					>
 						Sign In
 					</a>

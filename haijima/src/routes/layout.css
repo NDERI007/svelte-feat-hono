@@ -2,7 +2,6 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
-
 :root {
 	/* --- Typography --- */
 	--font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -37,7 +36,7 @@
 	--color-border-light: #f2eae3; /* Lighter Beige - Subtle Dividers */
 
 	/* Status Colors */
-	--color-success: #7c9a6b;
+	--color-success: #166534;
 	--color-success-bg: #f0f5ed;
 	--color-warning: #e8a549;
 	--color-warning-bg: #fdf6ec;
@@ -105,7 +104,6 @@ a {
 	text-decoration: none;
 	font-weight: 500;
 	transition: all 0.2s ease;
-	color: var(--color-text);
 }
 
 .product-name {
@@ -132,7 +130,120 @@ a {
 	letter-spacing: -0.01em;
 }
 
-/* Buttons - Warm terracotta for calls-to-action */
+.modal-container {
+	background-color: var(--color-bg-0);
+	border-radius: 1.5rem;
+	box-shadow: 0 25px 50px -12px rgba(58, 42, 31, 0.25);
+}
+
+.modal-header {
+	border-bottom: 1px solid var(--color-border-light);
+}
+
+.modal-close-btn {
+	color: var(--color-text-muted);
+	padding: 0.5rem;
+	border-radius: 9999px;
+	transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+	background-color: #f3f4f6;
+	color: var(--color-text);
+}
+
+.modal-divider {
+	height: 1px;
+	background-color: var(--color-border-light);
+}
+
+.modal-size-btn {
+	position: relative;
+	padding: 0.75rem 1.25rem;
+	border-radius: 0.5rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	transition: all 0.2s ease;
+	border: 1px solid #000000;
+	background-color: #ffffff;
+	color: #000000;
+}
+
+.modal-size-btn:hover:not(:disabled) {
+	transform: translateY(-1px);
+}
+
+.modal-size-btn[data-selected='true'] {
+	border-color: #000000;
+	background-color: #000000;
+	color: white;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modal-size-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+	border-color: var(--color-border-light);
+	background-color: var(--color-bg-2);
+	color: var(--color-text-lighter);
+}
+
+.modal-unavailable-badge {
+	position: absolute;
+	top: -0.25rem;
+	right: -0.25rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 1.25rem;
+	width: 1.25rem;
+	border-radius: 9999px;
+	background-color: var(--color-text-muted);
+	color: white;
+	font-size: 0.75rem;
+}
+
+.modal-footer {
+	border-top: 1px solid var(--color-border-light);
+}
+
+.modal-add-btn {
+	padding: 0.875rem 1.5rem;
+	font-size: 1rem;
+	font-weight: 700;
+	border-radius: 0.75rem;
+	transition: all 0.2s ease;
+	background-color: #000000;
+	color: white;
+	border: none;
+}
+
+.modal-add-btn:hover:not(:disabled) {
+	background-color: var(--color-text-dark);
+}
+
+.modal-add-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	transform: none;
+}
+
+.modal-cancel-btn {
+	padding: 0.875rem 1.5rem;
+	font-size: 1rem;
+	font-weight: 600;
+	border-radius: 0.75rem;
+	border: 1px solid #000000;
+	background-color: #ffffff;
+	color: #000000;
+	transition: all 0.2s ease;
+}
+
+.modal-cancel-btn:hover {
+	background-color: #f3f4f6;
+}
+
+/* Buttons - Clean black for calls-to-action */
 .btn-primary {
 	background-color: var(--color-text-black);
 	color: white;
@@ -142,13 +253,13 @@ a {
 	transition: all 0.2s ease;
 	border: none;
 	cursor: pointer;
-	box-shadow: 0 1px 3px rgba(212, 116, 95, 0.12);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 .btn-primary:hover {
 	background-color: var(--color-text-dark);
 	transform: translateY(-1px);
-	box-shadow: 0 4px 12px rgba(212, 116, 95, 0.25);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .btn-secondary {
@@ -163,14 +274,14 @@ a {
 }
 
 .btn-secondary:hover {
-	border-color: var(--color-theme-1);
-	color: var(--color-theme-1);
-	background-color: var(--color-theme-light);
+	border-color: var(--color-text-black);
+	color: var(--color-text-black);
+	background-color: var(--color-bg-2);
 }
 
-/* Mocha accent button */
+/* Black accent button */
 .btn-accent {
-	background-color: var(--color-accent-1);
+	background-color: var(--color-text-charcoal);
 	color: white;
 	padding: 0.75rem 1.5rem;
 	border-radius: 0.5rem;
@@ -181,9 +292,9 @@ a {
 }
 
 .btn-accent:hover {
-	background-color: var(--color-accent-2);
+	background-color: var(--color-text-black);
 	transform: translateY(-1px);
-	box-shadow: 0 4px 12px rgba(164, 120, 100, 0.25);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 /* Custom Selection */
@@ -256,6 +367,32 @@ a {
 .cart-close-btn:hover {
 	background-color: var(--color-theme-light);
 	color: var(--color-theme-1);
+}
+
+.cart-delete-button {
+	color: var(--color-text-muted);
+	background-color: var(--color-bg-1);
+}
+
+.cart-delete-button:hover {
+	background-color: var(--color-theme-light);
+	color: var(--color-theme-2);
+}
+
+.cart-checkout-button {
+	background: linear-gradient(135deg, var(--color-text-black) 0%, var(--color-text-dark) 100%);
+}
+
+.cart-checkout-button:hover {
+	transform: translateY(-2px);
+}
+
+.cart-clear-button {
+	color: var(--color-text-muted);
+}
+
+.cart-clear-button:hover {
+	color: var(--color-theme-2);
 }
 
 .cart-delivery-prompt {

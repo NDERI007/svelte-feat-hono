@@ -33,11 +33,10 @@
 	// Handle Category Change
 	function handleCategoryChange(id: string) {
 		menuStore.setCategory(id);
-		if (id === 'all') toast.info('Showing all products');
 	}
 </script>
 
-<div class="flex min-h-screen flex-col bg-gray-50">
+<div class="flex min-h-screen flex-col">
 	<!-- Navigation -->
 	<Navbar
 		onToggleSidebar={() => (isSidebarOpen = !isSidebarOpen)}
@@ -65,7 +64,7 @@
 			{#if isLoading}
 				<!-- Loading State -->
 				<div class="flex h-64 flex-col items-center justify-center gap-3">
-					<Icon icon="lucide:loader-2" class="h-10 w-10 animate-spin text-green-600" />
+					<Icon icon="lucide:loader-2" class="h-10 w-10 animate-spin text-gray-600" />
 					<p class="text-sm text-gray-600">Loading products...</p>
 				</div>
 			{:else if products.length === 0}
@@ -87,7 +86,7 @@
 					{#if menuStore.activeCategoryId !== 'all'}
 						<button
 							onclick={() => handleCategoryChange('all')}
-							class="text-sm font-medium text-green-600 hover:text-green-700"
+							class="text-sm cursor-pointer font-medium text-black"
 						>
 							View All Products
 						</button>
